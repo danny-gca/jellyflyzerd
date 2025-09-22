@@ -1,0 +1,13 @@
+- Dans ce dossier jellyfin, nous allons mettre au point quelques script permettant le bon fonctionnement de l'application jellyfin
+- Nous sommes dans un WSL linux Ubuntu
+- Nginx est installé pour mettre en place jellyfin sur le web
+- Jellyfin est déjà censé être installé
+- Sur le web, je pouvais déjà accéder à "http://[LOCAL_IP]:8096/web/index.html#/home.html" pour allez sur jellyfin mais ça ne marche plus
+- Ensuite, j'ai paramétré ma box free pour qu'elle se connecte à l'adresse IP ouvert sur un port spécifique pour ensuite accéder à Jellyfin depuis l'exterieur sur cette addresse "https://[EXTERNAL_DOMAIN]/web/#/home.html"  
+- j'ai aussi des logs qui trainent un peu partout je ne sais pas trop pourquoi vérifie les dossiers habituels pour voir lesquels sont utilisés
+- J'ai aussi ces fichiers là que je ne connais pas trop : "~/jellyfin-nohup.log", "~/jellyfin.log", "~/projects/jellyfin", "~/start-jellyfin.sh"
+- Sur mon bureau, j'ai un fichier raccourci qui lance ce script : C:\Windows\System32\wsl.exe -e bash -ic "~/start-jellyfin.sh", sauf que de base, quand mon ordinateur démarrait et que mon WSL se lancait, mon nginx se lançait automatiquement donc mon Jellyfin démarrait puis j'avais directement accès à mon Jellyfin sur ma télé depuis "https://[EXTERNAL_DOMAIN]/web/#/home.html" mais ce n'est plus le cas. Je voudrais que ça refonctionne comme cela, sans avoir besoin du raccourci.
+- Par contre, j'aimerais un script qui me permettrait de forcer l'arrêt si nécéssaire, de relancer si nécéssaire et surtout un script qui fais la mise à jour de : WSL + Nginx + Jellyfin
+- Ne commit jamais par toi même
+- System has not been booted with systemd as init system (PID 1). 
+- Les variables d'environnements et données sensibles sont paramétrés dans ".env". Met à jour le ".env.example" si tu en rajoutes.

@@ -1,0 +1,55 @@
+# Configuration et environnement
+.config/
+.env
+*.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+log/
+logs/
+
+# Fichiers temporaires
+*.tmp
+*.temp
+.cache/
+tmp/
+jellyfin-cache/
+jellyfin-data/
+
+# Fichiers de processus
+*.pid
+*.lock
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers d'éditeur
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files
+*.bak
+*.backup
+
+# Données sensibles
+*.key
+*.pem
+*.crt
+secrets/
+private/
+
+# Dossiers de build/dist
+build/
+dist/
+node_modules/
+
+# Fichiers de configuration locaux
+local.conf
+local.config
+*.local
