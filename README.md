@@ -229,3 +229,5 @@ En cas de problème :
 4. Redémarrer les services
 
 Pour plus d'aide, consulter les logs détaillés dans `~/jellyfin/log/`.
+
+With help of Claude AI
