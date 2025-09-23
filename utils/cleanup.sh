@@ -217,14 +217,16 @@ cleanup_custom() {
     read -p "Appuyez sur Entrée pour continuer..."
 }
 
-# Fonction principale
-if [ "$1" = "auto" ]; then
-    # Nettoyage automatique silencieux
-    cleanup_auto
-elif [ "$1" = "interactive" ]; then
-    # Nettoyage interactif
-    cleanup_interactive
-else
-    # Mode par défaut
-    cleanup_interactive
+# Fonction principale - ne s'exécute que si le script est appelé directement
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    if [ "$1" = "auto" ]; then
+        # Nettoyage automatique silencieux
+        cleanup_auto
+    elif [ "$1" = "interactive" ]; then
+        # Nettoyage interactif
+        cleanup_interactive
+    else
+        # Mode par défaut
+        cleanup_interactive
+    fi
 fi
