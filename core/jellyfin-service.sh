@@ -20,8 +20,12 @@ prepare_environment() {
     fi
 
     if [ -d "$JELLYFIN_CACHE_DIR" ]; then
-        sudo chown -R $JELLYFIN_SYSTEM_USER:$JELLYFIN_SYSTEM_USER "$JELLYFIN_CACHE_DIR" 2>/dev/null || true
+        # Détecter qui va lancer Jellyfin (utilisateur actuel) et ajuster les permissions
+        local current_user=$(whoami)
+        sudo chown -R $current_user:$current_user "$JELLYFIN_CACHE_DIR" 2>/dev/null || true
         sudo chmod -R 755 "$JELLYFIN_CACHE_DIR" 2>/dev/null || true
+        # Corriger spécifiquement les permissions des fichiers de cache pour éviter les problèmes d'accès
+        find "$JELLYFIN_CACHE_DIR" -type f -exec sudo chmod 644 {} \; 2>/dev/null || true
     fi
 
     # Vérifier que l'interface web existe
