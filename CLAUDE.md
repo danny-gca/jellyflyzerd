@@ -1,7 +1,0 @@
-- Nous sommes dans un WSL linux Ubuntu
-- Nginx est installé pour mettre en place jellyfin sur le web
-- Sur le web, je dois accéder à "http://[LOCAL_IP]:8096/web/index.html#/home.html" pour allez sur jellyfin
-- J'ai paramétré ma box pour qu'elle se connecte à l'adresse IP ouvert sur un port spécifique pour ensuite accéder à Jellyfin depuis l'exterieur sur cette addresse "https://[EXTERNAL_DOMAIN]/web/#/home.html"  
-- System has not been booted with systemd as init system (PID 1). 
-- Les variables d'environnements et données sensibles sont paramétrés dans ".env". Met à jour le ".env.example" si tu en rajoutes.
-- ne fais jamais apparaitre "jellyflyzerd" ou "dgarcia" ou d'autres données sensibles dans les fichiers.
