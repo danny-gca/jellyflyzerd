@@ -20,6 +20,12 @@ tmp/
 jellyfin-cache/
 jellyfin-data/
 
+# Données v2.0.0
+data/*
+!data/config/.gitignore
+!data/cache/.gitignore
+backup-v1-*/
+
 # Fichiers de processus
 *.pid
 *.lock
@@ -46,10 +52,13 @@ Thumbs.db
 secrets/
 private/
 
-# Dossiers de build/dist
+# Dossiers de build/dist Node.js
 build/
-dist/
 node_modules/
+package-lock.json
+
+# Build TypeScript (dist conservé pour production)
+dist/
 
 # Fichiers de configuration locaux
 local.conf
