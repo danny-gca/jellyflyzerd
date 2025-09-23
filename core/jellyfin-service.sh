@@ -15,12 +15,12 @@ prepare_environment() {
 
     # Vérifier et corriger les permissions des dossiers Jellyfin
     if [ -d "$JELLYFIN_DATA_DIR" ]; then
-        sudo chown -R $JELLYFIN_USER:$JELLYFIN_USER "$JELLYFIN_DATA_DIR" 2>/dev/null || true
+        sudo chown -R $JELLYFIN_SYSTEM_USER:$JELLYFIN_SYSTEM_USER "$JELLYFIN_DATA_DIR" 2>/dev/null || true
         sudo chmod -R 755 "$JELLYFIN_DATA_DIR" 2>/dev/null || true
     fi
 
     if [ -d "$JELLYFIN_CACHE_DIR" ]; then
-        sudo chown -R $JELLYFIN_USER:$JELLYFIN_USER "$JELLYFIN_CACHE_DIR" 2>/dev/null || true
+        sudo chown -R $JELLYFIN_SYSTEM_USER:$JELLYFIN_SYSTEM_USER "$JELLYFIN_CACHE_DIR" 2>/dev/null || true
         sudo chmod -R 755 "$JELLYFIN_CACHE_DIR" 2>/dev/null || true
     fi
 
@@ -62,11 +62,20 @@ start_jellyfin() {
         "$PROJECT_DIR/utils/cleanup.sh" auto
     fi
 
-    # Créer un dossier temporaire pour chaque session
-    JELLYFIN_SESSION_DIR="/tmp/jellyfin-session-$$"
+    # Utiliser un dossier session permanent (fixe)
+    JELLYFIN_SESSION_DIR="/tmp/jellyfin-persistent"
     mkdir -p "$JELLYFIN_SESSION_DIR"
 
-    # Lancer Jellyfin de manière simplifiée
+    # Restaurer les données du dossier permanent s'il existe
+    if [ -d "$JELLYFIN_DATA_DIR/data" ]; then
+        log "Restauration des données Jellyfin..."
+        sudo cp -r "$JELLYFIN_DATA_DIR"/* "$JELLYFIN_SESSION_DIR/" 2>/dev/null || true
+        # Corriger les permissions pour l'utilisateur actuel
+        sudo chown -R $USER:$USER "$JELLYFIN_SESSION_DIR" 2>/dev/null || true
+        success "Données restaurées"
+    fi
+
+    # Lancer Jellyfin avec le dossier session persistent
     PATH="/usr/lib/jellyfin-ffmpeg:$PATH" nohup jellyfin \
         --datadir "$JELLYFIN_SESSION_DIR" \
         --service \
@@ -95,6 +104,16 @@ stop_jellyfin() {
         return 0
     fi
 
+    # Sauvegarder les données AVANT d'arrêter Jellyfin
+    JELLYFIN_SESSION_DIR="/tmp/jellyfin-persistent"
+    if [ -d "$JELLYFIN_SESSION_DIR/data" ]; then
+        log "Sauvegarde des données Jellyfin..."
+        mkdir -p "$JELLYFIN_DATA_DIR"
+        sudo cp -r "$JELLYFIN_SESSION_DIR"/* "$JELLYFIN_DATA_DIR/" 2>/dev/null || true
+        sudo chown -R $JELLYFIN_SYSTEM_USER:$JELLYFIN_SYSTEM_USER "$JELLYFIN_DATA_DIR" 2>/dev/null || true
+        success "Données sauvegardées"
+    fi
+
     local pid=$(cat "$JELLYFIN_PID_FILE")
     kill "$pid" 2>/dev/null || true
 
@@ -112,7 +131,7 @@ stop_jellyfin() {
     fi
 
     rm -f "$JELLYFIN_PID_FILE"
-    success "Jellyfin arrêté"
+    success "Jellyfin arrêté (données sauvegardées)"
 }
 
 # Redémarrer Jellyfin
