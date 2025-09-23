@@ -6,6 +6,7 @@
 MENU_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$MENU_DIR/../core/config.sh"
 source "$MENU_DIR/../utils/advanced.sh"
+source "$MENU_DIR/../utils/security.sh"
 
 # Menu de configuration avancée
 show_advanced_menu() {
@@ -20,9 +21,10 @@ show_advanced_menu() {
     echo -e "  ${YELLOW}4${NC}) 🔍 Vérifier la configuration Nginx"
     echo -e "  ${YELLOW}5${NC}) 🆔 Afficher les informations système"
     echo -e "  ${GREEN}6${NC}) 🧹 Nettoyage complet Jellyfin"
+    echo -e "  ${RED}7${NC}) 🔒 Sécurité et audit (Score: 50%)"
     echo -e "  ${RED}0${NC}) ⬅️  Retour au menu principal"
     echo
-    echo -n -e "${BLUE}Votre choix [0-6]: ${NC}"
+    echo -n -e "${BLUE}Votre choix [0-7]: ${NC}"
 }
 
 # Gestion du menu avancé
@@ -57,12 +59,16 @@ handle_advanced_menu() {
                 echo
                 cleanup_jellyfin
                 ;;
+            7)
+                echo
+                security_menu
+                ;;
             0)
                 return
                 ;;
             *)
                 echo
-                error "Choix invalide. Veuillez sélectionner un nombre entre 0 et 6."
+                error "Choix invalide. Veuillez sélectionner un nombre entre 0 et 7."
                 sleep 2
                 ;;
         esac

@@ -9,6 +9,7 @@ source "$MENU_DIR/../core/jellyfin-service.sh"
 source "$MENU_DIR/../core/nginx-service.sh"
 source "$MENU_DIR/../utils/status.sh"
 source "$MENU_DIR/../utils/update.sh"
+source "$MENU_DIR/../utils/security.sh"
 source "$MENU_DIR/advanced-menu.sh"
 
 # Fonction pour configurer le démarrage automatique
@@ -148,9 +149,10 @@ show_menu() {
     echo -e "  ${YELLOW}6${NC}) 🔧 Mise à jour complète (WSL + Nginx + Jellyfin)"
     echo -e "  ${BLUE}7${NC}) ⚙️  Configuration avancée"
     echo -e "  ${GREEN}8${NC}) 🔄 Configurer le démarrage automatique"
+    echo -e "  ${RED}9${NC}) 🔒 Audit de sécurité"
     echo -e "  ${RED}0${NC}) ❌ Quitter"
     echo
-    echo -n -e "${BLUE}Votre choix [0-8]: ${NC}"
+    echo -n -e "${BLUE}Votre choix [0-9]: ${NC}"
 }
 
 # Gestion du menu principal
@@ -213,6 +215,12 @@ handle_main_menu() {
             echo
             setup_autostart_menu
             ;;
+        9)
+            echo
+            security_audit
+            echo
+            read -p "Appuyez sur Entrée pour continuer..."
+            ;;
         0)
             echo
             log "Au revoir! 👋"
@@ -220,7 +228,7 @@ handle_main_menu() {
             ;;
         *)
             echo
-            error "Choix invalide. Veuillez sélectionner un nombre entre 0 et 8."
+            error "Choix invalide. Veuillez sélectionner un nombre entre 0 et 9."
             sleep 2
             ;;
     esac

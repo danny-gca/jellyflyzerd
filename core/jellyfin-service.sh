@@ -80,10 +80,21 @@ start_jellyfin() {
     fi
 
     # Lancer Jellyfin avec le dossier session persistent
-    PATH="/usr/lib/jellyfin-ffmpeg:$PATH" nohup jellyfin \
-        --datadir "$JELLYFIN_SESSION_DIR" \
-        --service \
-        > "$PROJECT_DIR/log/jellyfin.log" 2>&1 &
+    # Utiliser l'utilisateur dédié jellyfinuser si disponible pour plus de sécurité
+    if id "jellyfinuser" &>/dev/null; then
+        log "Démarrage avec l'utilisateur sécurisé 'jellyfinuser'"
+        PATH="/usr/lib/jellyfin-ffmpeg:$PATH" sudo -u jellyfinuser nohup jellyfin \
+            --datadir "$JELLYFIN_SESSION_DIR" \
+            --service \
+            > "$PROJECT_DIR/log/jellyfin.log" 2>&1 &
+    else
+        warning "Démarrage avec l'utilisateur actuel (non sécurisé)"
+        warning "Utilisez 'Menu Avancé > Sécurité' pour créer un utilisateur dédié"
+        PATH="/usr/lib/jellyfin-ffmpeg:$PATH" nohup jellyfin \
+            --datadir "$JELLYFIN_SESSION_DIR" \
+            --service \
+            > "$PROJECT_DIR/log/jellyfin.log" 2>&1 &
+    fi
 
     local pid=$!
     echo $pid > "$JELLYFIN_PID_FILE"
