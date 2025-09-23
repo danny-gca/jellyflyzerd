@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyflyzerd-jellyfin
+    user: 1000:1000
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+      - JELLYFIN_PublishedServerUrl=http://localhost:8096
+    volumes:
+      # Configuration persistante
+      - jellyfin-config:/config
+      - jellyfin-cache:/cache
+
+      # Médias (lecture seule pour sécurité)
+      - ${MEDIA_PATH:-~/media}:/media:ro
+
+      # Logs (optionnel)
+      - ./logs:/var/log/jellyfin
+    ports:
+      - "8096:8096"
+      - "8920:8920"  # Port HTTPS (optionnel)
+      - "7359:7359/udp"  # Auto-discovery (optionnel)
+      - "1900:1900/udp"  # DLNA (optionnel)
+    restart: unless-stopped
+
+    # Sécurité renforcée
+    security_opt:
+      - no-new-privileges:true
+
+    # Limitations des ressources (optionnel)
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+    # Checks de santé
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx proxy (optionnel - pour HTTPS)
+  nginx:
+    image: nginx:alpine
+    container_name: jellyflyzerd-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - jellyfin
+    restart: unless-stopped
+    profiles:
+      - nginx  # Activé seulement avec --profile nginx
+
+volumes:
+  jellyfin-config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${CONFIG_PATH:-./data/config}
+
+  jellyfin-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${CACHE_PATH:-./data/cache}
+
+networks:
+  default:
+    name: jellyflyzerd-network

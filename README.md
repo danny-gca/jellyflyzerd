@@ -191,15 +191,6 @@ La v2.0.0 atteint un score de **95%** grâce à :
 - ✅ Fail2ban protection
 - ✅ Auto-updates système
 
-## 🔄 Migration depuis v1.x
-
-Un script de migration automatique est prévu pour faciliter le passage de la version bash vers TypeScript+Docker.
-
-```bash
-# Migration automatique (à venir)
-jellyflyzerd migrate --from-v1 /path/to/old/jellyfin
-```
-
 ## 📚 Documentation
 
 - [Guide de sécurité](./SECURITY.md)

@@ -8,7 +8,6 @@ import { statusCommand } from './commands/status.js';
 import { startCommand } from './commands/start.js';
 import { stopCommand } from './commands/stop.js';
 import { logsCommand } from './commands/logs.js';
-import { migrateCommand } from './commands/migrate.js';
 
 // Informations du package
 import { readFileSync } from 'fs';
@@ -37,7 +36,6 @@ program.addCommand(statusCommand);
 program.addCommand(startCommand);
 program.addCommand(stopCommand);
 program.addCommand(logsCommand);
-program.addCommand(migrateCommand);
 
 // Commande par défaut (afficher le statut si aucune commande)
 program.action(() => {
@@ -54,7 +52,6 @@ program.action(() => {
   console.log('  jellyflyzerd stop     - Arrêter Jellyfin');
   console.log('  jellyflyzerd status   - Statut des services');
   console.log('  jellyflyzerd logs     - Afficher les logs');
-  console.log('  jellyflyzerd migrate  - Migrer depuis v1.x');
 
   console.log();
   Logger.info('💡 Aide détaillée:');

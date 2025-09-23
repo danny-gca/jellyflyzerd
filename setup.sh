@@ -190,9 +190,8 @@ echo "🎉 Installation terminée!"
 echo
 echo "📋 Prochaines étapes:"
 echo "  1. Vérifiez la configuration: jellyflyzerd status"
-echo "  2. Migrez depuis v1.x (optionnel): jellyflyzerd migrate"
-echo "  3. Démarrez Jellyfin: jellyflyzerd start"
-echo "  4. Consultez les logs: jellyflyzerd logs"
+echo "  2. Démarrez Jellyfin: jellyflyzerd start"
+echo "  3. Consultez les logs: jellyflyzerd logs"
 echo
 echo "💡 Aide: jellyflyzerd --help"
 echo
