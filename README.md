@@ -7,6 +7,7 @@ Système de gestion complet de Jellyfin sous WSL Ubuntu, conçu pour résoudre l
 ```
 jellyfin/
 ├── 🎯 jellyfin-manager.sh         # Script principal (menu interactif)
+├── 🖥️ jellyfin-manager.bat        # Raccourci Windows pour le manager
 ├── 🚀 auto-start-jellyfin.sh      # Démarrage automatique
 ├── 📚 README.md                   # Cette documentation
 ├── ⚙️ install.sh                  # Script d'installation automatique
@@ -52,6 +53,14 @@ nano .env  # Modifier selon votre environnement
 ```
 
 ## 📋 Utilisation
+
+### Raccourci Windows
+
+Pour lancer le manager depuis Windows :
+
+1. **Copier le fichier bat** : Naviguez vers `\\wsl$\Ubuntu\home\[USERNAME]\jellyfin\jellyfin-manager.bat`
+2. **Placer sur le bureau** : Copiez le fichier sur votre bureau Windows
+3. **Double-cliquer** pour lancer directement le manager Jellyfin dans WSL
 
 ### Menu interactif
 
