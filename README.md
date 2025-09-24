@@ -1,52 +1,84 @@
 # 🎬 Jellyflyzerd v2.0.0
 
-Modern Jellyfin manager with TypeScript and Docker support.
+CLI moderne pour la gestion de serveurs Jellyfin avec Docker.
 
-## ✨ Nouveautés v2.0.0
+## ✨ Fonctionnalités
 
 - 🐳 **Architecture Docker** - Isolation et sécurité maximale
 - 🔷 **TypeScript** - Code moderne et type-safe
-- 🎯 **CLI professionnel** - Interface en ligne de commande intuitive
-- 🛡️ **Sécurité renforcée** - Utilisateur non-root, volumes isolés
-- 📦 **Gestion automatique** - Configuration simplifiée
-- 🔧 **API moderne** - Utilisation de l'SDK Jellyfin officiel
+- 🎯 **CLI intuitif** - Gestion simplifiée en ligne de commande
+- 🛡️ **Sécurité renforcée** - Données isolées, HTTPS automatique
+- 📁 **Structure centralisée** - Configuration et données organisées
+- 🔧 **Installation automatisée** - Setup en une commande
 
-## 🚀 Installation
-
-### Prérequis
-
-- Node.js >= 18.0.0
-- Docker et Docker Compose
-- Git
-
-### Installation rapide
+## 🚀 Installation rapide
 
 ```bash
-# Cloner le repository
-git clone https://github.com/your-username/jellyflyzerd.git
+# Cloner et installer
+git clone <repository>
 cd jellyflyzerd
-
-# Installation des dépendances
-npm install
-
-# Configuration
 cp .env.example .env
 # Éditez .env avec vos paramètres
 
-# Build du projet
-npm run build
-
-# Installation globale (optionnel)
-npm link
+# Installation complète
+./scripts/setup/setup.sh
 ```
 
 ## 📋 Utilisation
 
-### Commandes principales
+```bash
+# Démarrer tous les services
+jellyflyzerd start
+
+# Vérifier le statut
+jellyflyzerd status
+
+# Voir les logs
+jellyflyzerd logs
+
+# Arrêter les services
+jellyflyzerd stop
+```
+
+## 📁 Structure du projet
+
+```
+jellyflyzerd/
+├── src/                    # Code TypeScript du CLI
+├── docker/                 # Configuration Docker
+│   ├── docker-compose.yml
+│   └── nginx/             # Proxy HTTPS
+├── scripts/               # Scripts d'administration
+│   ├── setup/            # Installation
+│   ├── ssl/              # Certificats SSL
+│   └── maintenance/      # Maintenance
+├── docs/                  # Documentation complète
+└── README.md             # Ce fichier
+```
+
+## 📖 Documentation
+
+- **[Installation complète](docs/installation.md)** - Guide détaillé
+- **[Dépannage](docs/troubleshooting.md)** - Solutions aux problèmes
+- **[Configuration Docker](docker/README.md)** - Services et volumes
+- **[Scripts](scripts/README.md)** - Administration et maintenance
+
+## 🌐 Accès
+
+- **Interface web** : http://your-server:8096
+- **HTTPS** : https://your-domain.com (avec certificat SSL)
+
+## 🔧 Développement
 
 ```bash
-# Démarrer Jellyfin
-jellyflyzerd start
+# Installation des dépendances
+npm install
+
+# Compilation TypeScript
+npm run build
+
+# Développement en mode watch
+npm run dev
 
 # Arrêter Jellyfin
 jellyflyzerd stop
@@ -114,8 +146,8 @@ EXTERNAL_DOMAIN=your-domain.com
 
 # Chemins
 MEDIA_PATH=/home/user/media
-CONFIG_PATH=./data/config
-CACHE_PATH=./data/cache
+CONFIG_PATH=/path/to/jellyfin-config
+CACHE_PATH=/path/to/jellyfin-cache
 
 # Sécurité
 ENABLE_FIREWALL=true
@@ -125,21 +157,7 @@ ENABLE_HTTPS=true
 
 ### Structure des dossiers
 
-```
-jellyflyzerd/
-├── src/                    # Code source TypeScript
-│   ├── commands/          # Commandes CLI
-│   ├── services/          # Services (Docker, Jellyfin)
-│   ├── types/             # Types TypeScript
-│   ├── utils/             # Utilitaires
-│   └── config/            # Configuration
-├── data/                   # Données persistantes
-│   ├── config/            # Config Jellyfin
-│   └── cache/             # Cache Jellyfin
-├── docker-compose.yml      # Configuration Docker
-├── package.json           # Dépendances Node.js
-└── tsconfig.json          # Configuration TypeScript
-```
+Cette section est obsolète. Voir la structure mise à jour au début du README.
 
 ## 🔧 Développement
 

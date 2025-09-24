@@ -7,7 +7,7 @@ set -e
 
 # Détection automatique des variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 CURRENT_USER="${USER:-$(whoami)}"
 
 # Charger les variables d'environnement si disponibles
@@ -19,7 +19,7 @@ fi
 SYSTEM_USER="${SYSTEM_USER:-$CURRENT_USER}"
 PROJECT_DIR="${PROJECT_DIR:-$PROJECT_DIR}"
 LETSENCRYPT_DIR="/etc/letsencrypt/live/${EXTERNAL_DOMAIN:-your-domain.com}"
-SSL_DIR="$PROJECT_DIR/nginx/ssl"
+SSL_DIR="$PROJECT_DIR/docker/nginx/ssl"
 
 echo "$(date): Synchronisation des certificats SSL..."
 echo "Utilisateur: $SYSTEM_USER"

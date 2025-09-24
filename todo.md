@@ -1,1 +1,0 @@
-- Attention aux données sensibles, il faut toujours les mettres dans le .env et .env.example

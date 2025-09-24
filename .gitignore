@@ -20,10 +20,7 @@ tmp/
 jellyfin-cache/
 jellyfin-data/
 
-# Données v2.0.0
-data/*
-!data/config/.gitignore
-!data/cache/.gitignore
+# Données v2.0.0 (obsolète - maintenant sur disque externe)
 backup-v1-*/
 
 # Fichiers de processus
@@ -53,7 +50,7 @@ secrets/
 private/
 
 # Configuration nginx générée (contient des données sensibles)
-nginx/nginx.conf
+docker/nginx/nginx.conf
 
 # Dossiers de build/dist Node.js
 build/

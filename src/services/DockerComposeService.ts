@@ -3,16 +3,16 @@ import { Logger } from '../utils/logger.js';
 import type { ServiceStatus, CommandResult } from '../types/index.js';
 
 export class DockerComposeService {
-  private projectDir: string;
+  private dockerDir: string;
 
   constructor(projectDir: string) {
-    this.projectDir = projectDir;
+    this.dockerDir = `${projectDir}/docker`;
   }
 
   async getStatus(): Promise<ServiceStatus> {
     try {
       const result = execSync('docker-compose ps --services --filter="status=running"', {
-        cwd: this.projectDir,
+        cwd: this.dockerDir,
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe']
       });
@@ -43,7 +43,7 @@ export class DockerComposeService {
 
       // Démarrer tous les services définis
       execSync('docker-compose up -d', {
-        cwd: this.projectDir,
+        cwd: this.dockerDir,
         stdio: ['pipe', 'pipe', 'pipe']
       });
 
@@ -71,7 +71,7 @@ export class DockerComposeService {
 
       // Arrêter tous les services (y compris ceux avec profils)
       execSync('docker-compose down --remove-orphans', {
-        cwd: this.projectDir,
+        cwd: this.dockerDir,
         stdio: ['pipe', 'pipe', 'pipe']
       });
 
@@ -99,13 +99,13 @@ export class DockerComposeService {
 
       // Redémarrer avec profil nginx
       execSync('docker-compose restart', {
-        cwd: this.projectDir,
+        cwd: this.dockerDir,
         stdio: ['pipe', 'pipe', 'pipe']
       });
 
       // S'assurer que tous les services sont démarrés
       execSync('docker-compose up -d', {
-        cwd: this.projectDir,
+        cwd: this.dockerDir,
         stdio: ['pipe', 'pipe', 'pipe']
       });
 
@@ -131,7 +131,7 @@ export class DockerComposeService {
     try {
       const serviceArg = service ? service : '';
       const result = execSync(`docker-compose logs --tail=${tail} ${serviceArg}`, {
-        cwd: this.projectDir,
+        cwd: this.dockerDir,
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe']
       });
