@@ -52,6 +52,9 @@ Thumbs.db
 secrets/
 private/
 
+# Configuration nginx générée (contient des données sensibles)
+nginx/nginx.conf
+
 # Dossiers de build/dist Node.js
 build/
 node_modules/
@@ -64,3 +67,4 @@ dist/
 local.conf
 local.config
 *.local
+.claude/

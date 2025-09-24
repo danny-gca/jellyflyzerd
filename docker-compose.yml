@@ -11,17 +11,17 @@ services:
       - TZ=Europe/Paris
       - JELLYFIN_PublishedServerUrl=http://localhost:8096
     volumes:
-      # Configuration persistante (Docker volume)
-      - jellyfin-config:/config
+      # Configuration persistante (structure centralisée)
+      - ${CONFIG_PATH}:/config
 
-      # Cache configurable via .env (bind mount pour performance)
-      - ${CACHE_PATH:-./data/cache}:/cache
+      # Cache (structure centralisée)
+      - ${CACHE_PATH}:/cache
 
       # Médias (lecture seule pour sécurité)
-      - ${MEDIA_PATH:-~/media}:/media:ro
+      - ${MEDIA_PATH}:/media:ro
 
-      # Logs (optionnel)
-      - ./logs:/var/log/jellyfin
+      # Logs (structure centralisée)
+      - ${LOGS_PATH}:/var/log/jellyfin
     ports:
       - "8096:8096"
       - "8920:8920"  # Port HTTPS (optionnel)
@@ -66,10 +66,6 @@ services:
     depends_on:
       - jellyfin
     restart: unless-stopped
-
-volumes:
-  jellyfin-config:
-    driver: local
 
 networks:
   default:

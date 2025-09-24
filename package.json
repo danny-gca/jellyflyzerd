@@ -30,7 +30,7 @@
     "typescript",
     "wsl"
   ],
-  "author": "dgarcia",
+  "author": "danny-gca",
   "license": "MIT",
   "dependencies": {
     "@jellyfin/sdk": "^0.8.0",

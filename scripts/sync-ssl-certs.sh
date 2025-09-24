@@ -18,7 +18,7 @@ fi
 # Variables avec fallbacks
 SYSTEM_USER="${SYSTEM_USER:-$CURRENT_USER}"
 PROJECT_DIR="${PROJECT_DIR:-$PROJECT_DIR}"
-LETSENCRYPT_DIR="/etc/letsencrypt/live/jellyflyzerd.freeboxos.fr"
+LETSENCRYPT_DIR="/etc/letsencrypt/live/${EXTERNAL_DOMAIN:-your-domain.com}"
 SSL_DIR="$PROJECT_DIR/nginx/ssl"
 
 echo "$(date): Synchronisation des certificats SSL..."
