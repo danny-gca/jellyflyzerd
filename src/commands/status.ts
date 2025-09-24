@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { DockerService } from '../services/DockerService.js';
+import { DockerComposeService } from '../services/DockerComposeService.js';
 import { Logger } from '../utils/logger.js';
 import { getConfig } from '../config/config.js';
 import ora from 'ora';
@@ -13,16 +13,16 @@ export const statusCommand = new Command('status')
 
     try {
       const config = getConfig();
-      const dockerService = new DockerService(config.docker);
+      const dockerService = new DockerComposeService(process.cwd());
 
-      // Récupérer le statut Jellyfin
-      const jellyfinStatus = await dockerService.getContainerStatus();
+      // Récupérer le statut des services
+      const servicesStatus = await dockerService.getStatus();
 
       spinner.stop();
 
       if (options.json) {
         console.log(JSON.stringify({
-          jellyfin: jellyfinStatus,
+          services: servicesStatus,
           timestamp: new Date().toISOString()
         }, null, 2));
         return;
@@ -36,21 +36,19 @@ export const statusCommand = new Command('status')
 
       console.log();
 
-      // Statut Jellyfin
-      console.log('🎬 Jellyfin (Docker):');
-      if (jellyfinStatus.isRunning) {
-        Logger.success(`  Statut: EN MARCHE`);
-        if (jellyfinStatus.pid) {
-          console.log(`  🆔 PID: ${jellyfinStatus.pid}`);
-        }
-        if (jellyfinStatus.uptime) {
-          console.log(`  ⏱️  Uptime: ${jellyfinStatus.uptime}`);
-        }
-        if (jellyfinStatus.user) {
-          console.log(`  👤 Utilisateur: ${jellyfinStatus.user === 'root' ? '🔴' : '🟢'} ${jellyfinStatus.user}`);
-        }
+      // Statut des services
+      console.log('🎬 Services Docker:');
+      if (servicesStatus.extra?.services) {
+        const { jellyfin, nginx } = servicesStatus.extra.services;
+        console.log(`  🎬 Jellyfin: ${jellyfin ? '🟢 EN MARCHE' : '🔴 ARRÊTÉ'}`);
+        console.log(`  🟦 Nginx: ${nginx ? '🟢 EN MARCHE' : '🔴 ARRÊTÉ'}`);
+        console.log(`  📈 Services actifs: ${servicesStatus.extra.runningCount}/2`);
       } else {
-        Logger.error('  Statut: ARRÊTÉ');
+        if (servicesStatus.isRunning) {
+          Logger.success('  Statut: EN MARCHE');
+        } else {
+          Logger.error('  Statut: ARRÊTÉ');
+        }
       }
 
       console.log();

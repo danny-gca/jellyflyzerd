@@ -4,16 +4,18 @@ services:
   jellyfin:
     image: jellyfin/jellyfin:latest
     container_name: jellyflyzerd-jellyfin
-    user: 1000:1000
+# user: 1000:1000  # Désactivé pour éviter les problèmes de permissions avec bind mounts
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Paris
       - JELLYFIN_PublishedServerUrl=http://localhost:8096
     volumes:
-      # Configuration persistante
+      # Configuration persistante (Docker volume)
       - jellyfin-config:/config
-      - jellyfin-cache:/cache
+
+      # Cache configurable via .env (bind mount pour performance)
+      - ${CACHE_PATH:-./data/cache}:/cache
 
       # Médias (lecture seule pour sécurité)
       - ${MEDIA_PATH:-~/media}:/media:ro
@@ -26,6 +28,10 @@ services:
       - "7359:7359/udp"  # Auto-discovery (optionnel)
       - "1900:1900/udp"  # DLNA (optionnel)
     restart: unless-stopped
+    command: >
+      sh -c "mkdir -p /tmp/jellyfin-persistent &&
+             ln -sf /config/root /tmp/jellyfin-persistent/root &&
+             exec /jellyfin/jellyfin"
 
     # Sécurité renforcée
     security_opt:
@@ -60,14 +66,9 @@ services:
     depends_on:
       - jellyfin
     restart: unless-stopped
-    profiles:
-      - nginx  # Activé seulement avec --profile nginx
 
 volumes:
   jellyfin-config:
-    driver: local
-
-  jellyfin-cache:
     driver: local
 
 networks:

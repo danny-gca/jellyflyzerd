@@ -1,33 +1,31 @@
 import { Command } from 'commander';
-import { DockerService } from '../services/DockerService.js';
+import { DockerComposeService } from '../services/DockerComposeService.js';
 import { Logger } from '../utils/logger.js';
-import { getConfig } from '../config/config.js';
 import ora from 'ora';
 
 export const stopCommand = new Command('stop')
   .description('Arrêter Jellyfin et les services associés')
   .option('--force', 'Forcer l\'arrêt (kill)')
   .action(async (options) => {
-    const config = getConfig();
-    const dockerService = new DockerService(config.docker);
+    const dockerService = new DockerComposeService(process.cwd());
 
     try {
-      // Vérifier si le service est en marche
+      // Vérifier si les services sont en marche
       const statusSpinner = ora('Vérification du statut...').start();
-      const status = await dockerService.getContainerStatus();
+      const status = await dockerService.getStatus();
       statusSpinner.stop();
 
       if (!status.isRunning) {
-        Logger.warning('Jellyfin est déjà arrêté');
+        Logger.warning('Les services sont déjà arrêtés');
         return;
       }
 
-      // Arrêter le service
-      const stopSpinner = ora('Arrêt de Jellyfin...').start();
-      const result = await dockerService.stopContainer();
+      // Arrêter tous les services
+      const stopSpinner = ora('Arrêt des services (Jellyfin + Nginx)...').start();
+      const result = await dockerService.stop();
 
       if (result.success) {
-        stopSpinner.succeed('Jellyfin arrêté avec succès! 🛑');
+        stopSpinner.succeed('Services arrêtés avec succès! 🛑');
 
         Logger.info('💾 Les données ont été sauvegardées automatiquement');
 

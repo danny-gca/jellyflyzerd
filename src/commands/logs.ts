@@ -1,27 +1,26 @@
 import { Command } from 'commander';
-import { DockerService } from '../services/DockerService.js';
+import { DockerComposeService } from '../services/DockerComposeService.js';
 import { Logger } from '../utils/logger.js';
-import { getConfig } from '../config/config.js';
 import ora from 'ora';
 
 export const logsCommand = new Command('logs')
-  .description('Afficher les logs de Jellyfin')
+  .description('Afficher les logs des services')
   .option('-f, --follow', 'Suivre les logs en temps réel')
   .option('-n, --tail <number>', 'Nombre de lignes à afficher', '100')
+  .option('-s, --service <service>', 'Service spécifique (jellyfin|nginx)', 'jellyfin')
   .option('--no-timestamps', 'Masquer les timestamps')
   .action(async (options) => {
-    const config = getConfig();
-    const dockerService = new DockerService(config.docker);
+    const dockerService = new DockerComposeService(process.cwd());
 
     try {
-      // Vérifier si le conteneur existe
-      const statusSpinner = ora('Vérification du conteneur...').start();
-      const status = await dockerService.getContainerStatus();
+      // Vérifier si les services sont actifs
+      const statusSpinner = ora('Vérification des services...').start();
+      const status = await dockerService.getStatus();
       statusSpinner.stop();
 
       if (!status.isRunning) {
-        Logger.warning('Le conteneur Jellyfin n\'est pas en cours d\'exécution');
-        Logger.info('Démarrez-le avec: jellyflyzerd start');
+        Logger.warning('Les services ne sont pas en cours d\'exécution');
+        Logger.info('Démarrez-les avec: jellyflyzerd start');
         return;
       }
 
@@ -41,8 +40,9 @@ export const logsCommand = new Command('logs')
         Logger.info('Affichage des derniers logs...');
       }
 
-      const logSpinner = ora(`Récupération des ${tailNumber} dernières lignes...`).start();
-      const logs = await dockerService.getLogs(tailNumber);
+      const serviceName = options.service === 'nginx' ? 'nginx' : 'jellyfin';
+      const logSpinner = ora(`Récupération des ${tailNumber} dernières lignes de ${serviceName}...`).start();
+      const logs = await dockerService.getLogs(serviceName, tailNumber);
       logSpinner.stop();
 
       if (!logs.trim()) {
@@ -50,7 +50,7 @@ export const logsCommand = new Command('logs')
         return;
       }
 
-      console.log('📋 Logs Jellyfin:');
+      console.log(`📋 Logs ${serviceName.charAt(0).toUpperCase() + serviceName.slice(1)}:`);
       console.log('─'.repeat(60));
 
       // Nettoyer et formater les logs

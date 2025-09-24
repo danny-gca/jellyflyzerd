@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { DockerService } from '../services/DockerService.js';
+import { DockerComposeService } from '../services/DockerComposeService.js';
 import { Logger } from '../utils/logger.js';
 import { getConfig } from '../config/config.js';
 import ora from 'ora';
@@ -10,32 +10,32 @@ export const startCommand = new Command('start')
   .option('--force', 'Forcer le redémarrage si déjà en marche')
   .action(async (options) => {
     const config = getConfig();
-    const dockerService = new DockerService(config.docker);
+    const dockerService = new DockerComposeService(process.cwd());
 
     try {
       // Vérifier le statut actuel
       if (!options.noCheck) {
         const spinner = ora('Vérification du statut actuel...').start();
-        const status = await dockerService.getContainerStatus();
+        const status = await dockerService.getStatus();
         spinner.stop();
 
         if (status.isRunning && !options.force) {
-          Logger.warning('Jellyfin est déjà en cours d\'exécution');
-          Logger.info('Utilisez --force pour redémarrer ou "jellyflyzerd stop" pour l\'arrêter');
+          Logger.warning('Les services sont déjà en cours d\'exécution');
+          Logger.info('Utilisez --force pour redémarrer ou "jellyflyzerd stop" pour les arrêter');
           return;
         }
 
         if (status.isRunning && options.force) {
           Logger.info('Redémarrage forcé demandé...');
-          const stopSpinner = ora('Arrêt du conteneur...').start();
-          await dockerService.stopContainer();
-          stopSpinner.succeed('Conteneur arrêté');
+          const stopSpinner = ora('Arrêt des services...').start();
+          await dockerService.stop();
+          stopSpinner.succeed('Services arrêtés');
         }
       }
 
-      // Démarrer le service
-      const startSpinner = ora('Démarrage de Jellyfin...').start();
-      const result = await dockerService.startContainer();
+      // Démarrer les services
+      const startSpinner = ora('Démarrage des services (Jellyfin + Nginx)...').start();
+      const result = await dockerService.start();
 
       if (result.success) {
         startSpinner.succeed('Jellyfin démarré avec succès! 🎉');
