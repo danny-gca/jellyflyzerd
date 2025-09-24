@@ -140,7 +140,7 @@ export class DockerService {
     const containerConfig = {
       Image: this.config.imageName,
       name: this.config.containerName,
-      User: '1000:1000', // Utilisateur non-root pour sécurité
+      // User: '1000:1000', // Temporairement désactivé pour debug
       Env: Object.entries(this.config.environment).map(([key, value]) => `${key}=${value}`),
       HostConfig: {
         PortBindings: this.formatPortBindings(),

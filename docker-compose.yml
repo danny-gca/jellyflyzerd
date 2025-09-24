@@ -66,17 +66,9 @@ services:
 volumes:
   jellyfin-config:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${CONFIG_PATH:-./data/config}
 
   jellyfin-cache:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${CACHE_PATH:-./data/cache}
 
 networks:
   default:

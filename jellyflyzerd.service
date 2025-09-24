@@ -1,0 +1,19 @@
+[Unit]
+Description=Jellyflyzerd - Gestionnaire Jellyfin moderne
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Variables à personnaliser lors de l'installation
+User=%i
+Group=%i
+WorkingDirectory=/home/%i/projects/jellyflyzerd
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/%i/.local/bin"
+ExecStart=/home/%i/projects/jellyflyzerd/start-on-boot.sh
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
