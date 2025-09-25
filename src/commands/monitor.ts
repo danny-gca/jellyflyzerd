@@ -8,6 +8,7 @@ export const monitorCommand = new Command('monitor')
   .option('--jellyfin', 'Monitorer uniquement les logs jellyfin')
   .option('--live', 'Mode temps réel (tail -f)')
   .option('--attacks', 'Afficher uniquement les tentatives d\'attaque')
+  .option('--errors', 'Afficher les erreurs de configuration (4xx/5xx)')
   .option('--stats', 'Afficher les statistiques d\'accès')
   .option('--tail <n>', 'Nombre de lignes à afficher', '100')
   .action(async (options) => {
@@ -21,6 +22,11 @@ export const monitorCommand = new Command('monitor')
 
       if (options.attacks) {
         await showAttacks(parseInt(options.tail));
+        return;
+      }
+
+      if (options.errors) {
+        await showErrors(parseInt(options.tail));
         return;
       }
 
@@ -73,39 +79,85 @@ async function showRecentLogs(options: any, tail: number): Promise<void> {
   }
 }
 
+async function showErrors(tail: number): Promise<void> {
+  console.log('❌ ERREURS DE CONFIGURATION DÉTECTÉES:\n');
+
+  try {
+    const nginxLogs = execSync(`docker logs jellyflyzerd-nginx 2>/dev/null | tail -${tail * 3}`, { encoding: 'utf-8' });
+
+    if (nginxLogs.trim()) {
+      const lines = nginxLogs.split('\n');
+      let errorCount = 0;
+
+      for (const line of lines) {
+        if (line.trim()) {
+          // Détecter les erreurs 4xx et 5xx (sauf 404 normaux)
+          if ((line.includes(' 40') || line.includes(' 50')) &&
+              !line.includes(' 404 ') &&
+              line.includes(' - ')) {
+
+            if (line.includes(' 502 ')) {
+              console.log(`🔧 CONFIG: ${line}`);
+            } else if (line.includes(' 50')) {
+              console.log(`🚨 SERVEUR: ${line}`);
+            } else {
+              console.log(`⚠️  CLIENT: ${line}`);
+            }
+            errorCount++;
+          }
+        }
+      }
+
+      if (errorCount === 0) {
+        console.log('✅ Aucune erreur de configuration récente');
+      } else {
+        console.log(`\n📊 Total: ${errorCount} erreur(s) détectée(s)`);
+        if (nginxLogs.includes(' 502 ')) {
+          console.log('\n💡 Erreurs 502: Vérifiez que Jellyfin est démarré et accessible');
+        }
+      }
+    } else {
+      console.log('Aucun log à analyser');
+    }
+  } catch (error) {
+    console.log('❌ Impossible d\'analyser les erreurs');
+  }
+}
+
 async function showAttacks(tail: number): Promise<void> {
   console.log('🚨 TENTATIVES D\'ATTAQUE DÉTECTÉES:\n');
 
   const suspiciousPatterns = [
-    // Attaques courantes
-    '404.*\\.(php|asp|jsp)',
-    'admin',
+    // Attaques courantes (fichiers spécifiques)
     'wp-admin',
     'wp-login',
     'phpmyadmin',
     'xmlrpc',
     '\\.env',
     'config\\.php',
+    '/admin/login',
+    '/administrator',
 
-    // Scanners
+    // Extensions dangereuses avec 404
+    '404.*\\.(php|asp|jsp|cgi)',
+
+    // Scanners (User-Agent)
     'nikto',
     'nmap',
     'sqlmap',
     'gobuster',
     'dirbuster',
 
-    // User agents suspects
+    // User agents automatisés suspects (mais pas curl/wget seuls)
     'python-requests',
-    'curl',
-    'wget',
+    '\\bbot\\b',
     'scanner',
+    'vulnerability',
 
-    // Status codes suspects
-    ' (40[0-9]|50[0-9]) ',
-
-    // Tentatives de force brute
-    'POST.*login',
-    'POST.*admin',
+    // Tentatives de force brute (POST sur login)
+    'POST.*wp-login',
+    'POST.*admin.*login',
+    'POST.*administrator',
   ];
 
   try {
@@ -117,6 +169,21 @@ async function showAttacks(tail: number): Promise<void> {
 
       for (const line of lines) {
         if (line.trim()) {
+          // Ignorer les logs normaux d'initialisation Docker
+          if (line.includes('/docker-entrypoint') || line.includes('Sourcing')) {
+            continue;
+          }
+
+          // Ignorer les erreurs 502 avec navigateurs normaux (problèmes de config, pas d'attaque)
+          if (line.includes(' 502 ') && (line.includes('Mozilla/') || line.includes('Chrome/'))) {
+            continue;
+          }
+
+          // Ignorer les erreurs SSL malformées (scans automatiques normaux)
+          if (line.includes(' 400 ') && line.includes('x16\\x03\\x01')) {
+            continue;
+          }
+
           for (const pattern of suspiciousPatterns) {
             if (new RegExp(pattern, 'i').test(line)) {
               console.log(`🚨 ${line}`);
@@ -221,16 +288,37 @@ async function startLiveMonitoring(options: any): Promise<void> {
   }
 
   try {
-    // Utiliser docker logs -f pour le suivi en temps réel
-    const command = `docker logs -f --tail=10 ${containers.join(' ')} 2>&1`;
+    if (containers.length === 1) {
+      // Un seul conteneur : utiliser docker logs -f directement
+      const command = `docker logs -f --tail=10 ${containers[0]} 2>&1`;
+      console.log(`Suivi: ${containers[0]}\n`);
 
-    console.log(`Commande: ${command}\n`);
+      execSync(command, {
+        stdio: 'inherit',
+        cwd: process.cwd()
+      });
+    } else {
+      // Plusieurs conteneurs : utiliser docker-compose logs si disponible
+      try {
+        const composeCommand = 'docker-compose -f docker/docker-compose.yml logs -f --tail=10 nginx jellyfin';
+        console.log('Suivi: nginx + jellyfin via docker-compose\n');
 
-    // Exécuter en mode synchrone pour le streaming
-    execSync(command, {
-      stdio: 'inherit', // Afficher directement dans le terminal
-      cwd: process.cwd()
-    });
+        execSync(composeCommand, {
+          stdio: 'inherit',
+          cwd: process.cwd()
+        });
+      } catch {
+        // Fallback : surveiller le premier conteneur seulement
+        console.log('⚠️ Impossible de surveiller plusieurs conteneurs simultanément');
+        console.log(`Surveillance de ${containers[0]} uniquement:\n`);
+
+        const fallbackCommand = `docker logs -f --tail=10 ${containers[0]} 2>&1`;
+        execSync(fallbackCommand, {
+          stdio: 'inherit',
+          cwd: process.cwd()
+        });
+      }
+    }
   } catch (error) {
     // Normal si l'utilisateur fait Ctrl+C
     console.log('\n⏹️ Monitoring arrêté');
