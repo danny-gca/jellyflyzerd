@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 import { logsCommand } from './commands/logs.js';
+import { securityCommand } from './commands/security.js';
 import { startCommand } from './commands/start.js';
 // Import des commandes
 import { statusCommand } from './commands/status.js';
@@ -36,6 +37,7 @@ program.addCommand(statusCommand);
 program.addCommand(startCommand);
 program.addCommand(stopCommand);
 program.addCommand(logsCommand);
+program.addCommand(securityCommand);
 
 // Commande par défaut (afficher le statut si aucune commande)
 program.action(() => {
