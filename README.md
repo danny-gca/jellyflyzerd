@@ -10,6 +10,8 @@ CLI moderne pour la gestion de serveurs Jellyfin avec Docker.
 - 🛡️ **Sécurité renforcée** - Données isolées, HTTPS automatique
 - 📁 **Structure centralisée** - Configuration et données organisées
 - 🔧 **Installation automatisée** - Setup en une commande
+- 🔒 **Audit de sécurité** - Vérifications automatisées
+- 📊 **Monitoring intégré** - Surveillance des logs et accès
 
 ## 🚀 Installation rapide
 
@@ -26,6 +28,8 @@ cp .env.example .env
 
 ## 📋 Utilisation
 
+### Commandes principales
+
 ```bash
 # Démarrer tous les services
 jellyflyzerd start
@@ -40,6 +44,25 @@ jellyflyzerd logs
 jellyflyzerd stop
 ```
 
+### 🔒 Sécurité et monitoring
+
+```bash
+# Audit de sécurité complet
+jellyflyzerd security
+
+# Monitoring des logs en temps réel
+jellyflyzerd monitor --live
+
+# Détecter les tentatives d'attaque
+jellyflyzerd monitor --attacks
+
+# Statistiques d'accès
+jellyflyzerd monitor --stats
+
+# Sauvegarder un rapport de sécurité
+jellyflyzerd security --save security-report.json
+```
+
 ## 📁 Structure du projet
 
 ```
@@ -49,9 +72,9 @@ jellyflyzerd/
 │   ├── docker-compose.yml
 │   └── nginx/             # Proxy HTTPS
 ├── scripts/               # Scripts d'administration
-│   ├── setup/            # Installation
+│   ├── setup/            # Installation et démarrage auto
 │   ├── ssl/              # Certificats SSL
-│   └── maintenance/      # Maintenance
+│   └── maintenance/      # Monitoring et maintenance
 ├── docs/                  # Documentation complète
 └── README.md             # Ce fichier
 ```
@@ -59,6 +82,8 @@ jellyflyzerd/
 ## 📖 Documentation
 
 - **[Installation complète](docs/installation.md)** - Guide détaillé
+- **[Sécurité](docs/security.md)** - Audit et protection
+- **[Monitoring](docs/monitoring.md)** - Surveillance et logs
 - **[Dépannage](docs/troubleshooting.md)** - Solutions aux problèmes
 - **[Configuration Docker](docker/README.md)** - Services et volumes
 - **[Scripts](scripts/README.md)** - Administration et maintenance
@@ -104,6 +129,13 @@ jellyflyzerd logs --follow
 
 # Démarrage avec options
 jellyflyzerd start --force  # Redémarrer si déjà en marche
+
+# Monitoring automatisé (script shell)
+./scripts/maintenance/monitor-security.sh
+
+# Monitoring spécialisé
+jellyflyzerd monitor --nginx     # Logs nginx uniquement
+jellyflyzerd monitor --jellyfin  # Logs jellyfin uniquement
 ```
 
 ## 🐳 Architecture Docker
@@ -188,26 +220,56 @@ npm run format
 - **Utils** : Utilitaires (Logger, Validation)
 - **Config** : Configuration centralisée avec validation
 
-## 🛡️ Sécurité
+## 🛡️ Sécurité et Monitoring
 
-### Améliorations v2.0.0
+### 🔒 Audit de sécurité automatisé
 
-- **Isolation Docker** : Jellyfin dans un conteneur isolé
-- **Utilisateur non-root** : UID/GID 1000:1000
-- **Volumes sécurisés** : Médias en lecture seule
-- **Network isolé** : Réseau Docker dédié
-- **No new privileges** : Empêche l'escalade de privilèges
+Jellyflyzerd inclut un système d'audit complet qui vérifie **25+ points de sécurité** :
+
+```bash
+# Audit complet
+jellyflyzerd security
+
+# Rapport JSON
+jellyflyzerd security --json --save rapport.json
+```
+
+**Vérifications incluses** :
+- ✅ Firewall (UFW/iptables)
+- ✅ Fail2ban (protection anti-intrusion)
+- ✅ Certificats SSL (validité et permissions)
+- ✅ Configuration Docker (utilisateur, capabilities, volumes)
+- ✅ Permissions système et mises à jour
+- ✅ Accès externe (spécifique à votre exposition publique)
+
+### 📊 Monitoring en temps réel
+
+Surveillance intégrée des logs et métriques :
+
+```bash
+# Temps réel
+jellyflyzerd monitor --live
+
+# Détection d'attaques
+jellyflyzerd monitor --attacks
+
+# Statistiques d'accès
+jellyflyzerd monitor --stats
+```
+
+**Fonctionnalités** :
+- 🚨 Détection automatique d'attaques (WordPress, scanners, brute force)
+- 📊 Statistiques IP, User-Agents, codes de statut
+- 📈 Métriques système (CPU, RAM, disque)
+- 🔍 Analyse historique 24h avec le script shell
 
 ### Score de sécurité
 
-La v2.0.0 atteint un score de **95%** grâce à :
+Avec l'audit automatisé, maintenez un score optimal :
 
-- ✅ Firewall UFW actif
-- ✅ HTTPS/SSL configuré
-- ✅ Isolation Docker
-- ✅ Utilisateur non-root
-- ✅ Fail2ban protection
-- ✅ Auto-updates système
+- **🎯 Objectif** : > 90% avec 0 critique
+- **📊 Monitoring** : Surveillance continue des accès
+- **🛡️ Protection** : Détection et blocage automatique des menaces
 
 ## 📚 Documentation
 

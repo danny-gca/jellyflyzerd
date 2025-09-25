@@ -26,7 +26,9 @@ export const securityCommand = new Command('security')
 
       if (options.fix) {
         Logger.info('🔧 Mode correction automatique non encore implémenté');
-        Logger.info('Les corrections manuelles sont recommandées pour la sécurité');
+        Logger.info(
+          'Les corrections manuelles sont recommandées pour la sécurité',
+        );
       }
 
       // Code de sortie basé sur les résultats
@@ -42,7 +44,10 @@ export const securityCommand = new Command('security')
         Logger.success('✅ Audit de sécurité réussi!');
       }
     } catch (error) {
-      Logger.error('Erreur lors de l\'audit de sécurité', error instanceof Error ? error : undefined);
+      Logger.error(
+        "Erreur lors de l'audit de sécurité",
+        error instanceof Error ? error : undefined,
+      );
       process.exit(1);
     }
   });
