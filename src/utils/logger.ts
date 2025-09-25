@@ -33,17 +33,17 @@ export class Logger {
     const width = 60;
     const titleLine = `║ ${title.padEnd(width - 4)} ║`;
 
-    console.log(chalk.blue('╔' + '═'.repeat(width - 2) + '╗'));
+    console.log(chalk.blue(`╔${'═'.repeat(width - 2)}╗`));
     console.log(chalk.blue(titleLine));
 
     if (content && content.length > 0) {
-      console.log(chalk.blue('╠' + '═'.repeat(width - 2) + '╣'));
-      content.forEach(line => {
+      console.log(chalk.blue(`╠${'═'.repeat(width - 2)}╣`));
+      content.forEach((line) => {
         const contentLine = `║ ${line.padEnd(width - 4)} ║`;
         console.log(chalk.blue(contentLine));
       });
     }
 
-    console.log(chalk.blue('╚' + '═'.repeat(width - 2) + '╝'));
+    console.log(chalk.blue(`╚${'═'.repeat(width - 2)}╝`));
   }
 }

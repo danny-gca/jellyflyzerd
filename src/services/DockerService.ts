@@ -1,6 +1,10 @@
 import Docker from 'dockerode';
+import type {
+  CommandResult,
+  DockerConfig,
+  ServiceStatus,
+} from '../types/index.js';
 import { Logger } from '../utils/logger.js';
-import type { ServiceStatus, DockerConfig, CommandResult } from '../types/index.js';
 
 export class DockerService {
   private docker: Docker;
@@ -20,10 +24,13 @@ export class DockerService {
         isRunning: inspect.State.Running,
         pid: inspect.State.Pid || undefined,
         uptime: this.calculateUptime(inspect.State.StartedAt),
-        user: inspect.Config.User || 'root'
+        user: inspect.Config.User || 'root',
       };
     } catch (error) {
-      if (error instanceof Error && error.message.includes('No such container')) {
+      if (
+        error instanceof Error &&
+        error.message.includes('No such container')
+      ) {
         return { isRunning: false };
       }
       throw error;
@@ -45,11 +52,13 @@ export class DockerService {
       }
 
       await container.start();
-      Logger.success(`Conteneur ${this.config.containerName} démarré avec succès`);
+      Logger.success(
+        `Conteneur ${this.config.containerName} démarré avec succès`,
+      );
 
       return {
         success: true,
-        message: 'Conteneur démarré avec succès'
+        message: 'Conteneur démarré avec succès',
       };
     } catch (error) {
       const errorMsg = `Échec du démarrage du conteneur: ${error instanceof Error ? error.message : error}`;
@@ -58,7 +67,7 @@ export class DockerService {
       return {
         success: false,
         message: errorMsg,
-        error: error instanceof Error ? error : new Error(String(error))
+        error: error instanceof Error ? error : new Error(String(error)),
       };
     }
   }
@@ -70,11 +79,13 @@ export class DockerService {
       const container = this.docker.getContainer(this.config.containerName);
       await container.stop();
 
-      Logger.success(`Conteneur ${this.config.containerName} arrêté avec succès`);
+      Logger.success(
+        `Conteneur ${this.config.containerName} arrêté avec succès`,
+      );
 
       return {
         success: true,
-        message: 'Conteneur arrêté avec succès'
+        message: 'Conteneur arrêté avec succès',
       };
     } catch (error) {
       const errorMsg = `Échec de l'arrêt du conteneur: ${error instanceof Error ? error.message : error}`;
@@ -83,7 +94,7 @@ export class DockerService {
       return {
         success: false,
         message: errorMsg,
-        error: error instanceof Error ? error : new Error(String(error))
+        error: error instanceof Error ? error : new Error(String(error)),
       };
     }
   }
@@ -95,11 +106,13 @@ export class DockerService {
       const container = this.docker.getContainer(this.config.containerName);
       await container.restart();
 
-      Logger.success(`Conteneur ${this.config.containerName} redémarré avec succès`);
+      Logger.success(
+        `Conteneur ${this.config.containerName} redémarré avec succès`,
+      );
 
       return {
         success: true,
-        message: 'Conteneur redémarré avec succès'
+        message: 'Conteneur redémarré avec succès',
       };
     } catch (error) {
       const errorMsg = `Échec du redémarrage du conteneur: ${error instanceof Error ? error.message : error}`;
@@ -108,7 +121,7 @@ export class DockerService {
       return {
         success: false,
         message: errorMsg,
-        error: error instanceof Error ? error : new Error(String(error))
+        error: error instanceof Error ? error : new Error(String(error)),
       };
     }
   }
@@ -120,12 +133,14 @@ export class DockerService {
         stdout: true,
         stderr: true,
         tail: tail,
-        timestamps: true
+        timestamps: true,
       });
 
       return logs.toString();
     } catch (error) {
-      Logger.error(`Impossible de récupérer les logs: ${error instanceof Error ? error.message : error}`);
+      Logger.error(
+        `Impossible de récupérer les logs: ${error instanceof Error ? error.message : error}`,
+      );
       return '';
     }
   }
@@ -141,20 +156,22 @@ export class DockerService {
       Image: this.config.imageName,
       name: this.config.containerName,
       // User: '1000:1000', // Temporairement désactivé pour debug
-      Env: Object.entries(this.config.environment).map(([key, value]) => `${key}=${value}`),
+      Env: Object.entries(this.config.environment).map(
+        ([key, value]) => `${key}=${value}`,
+      ),
       HostConfig: {
         PortBindings: this.formatPortBindings(),
         Binds: this.formatVolumeBind(),
         RestartPolicy: {
-          Name: 'unless-stopped'
+          Name: 'unless-stopped',
         },
-        SecurityOpt: ['no-new-privileges:true']
+        SecurityOpt: ['no-new-privileges:true'],
       },
       NetworkingConfig: {
         EndpointsConfig: {
-          bridge: {}
-        }
-      }
+          bridge: {},
+        },
+      },
     };
 
     return await this.docker.createContainer(containerConfig);
@@ -162,7 +179,8 @@ export class DockerService {
 
   private async ensureVolumes() {
     for (const [volumeName] of Object.entries(this.config.volumes)) {
-      if (!volumeName.startsWith('/')) { // Volume nommé
+      if (!volumeName.startsWith('/')) {
+        // Volume nommé
         try {
           await this.docker.getVolume(volumeName).inspect();
         } catch {
@@ -193,7 +211,9 @@ export class DockerService {
     const uptimeMs = now.getTime() - start.getTime();
 
     const days = Math.floor(uptimeMs / (24 * 60 * 60 * 1000));
-    const hours = Math.floor((uptimeMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+    const hours = Math.floor(
+      (uptimeMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000),
+    );
     const minutes = Math.floor((uptimeMs % (60 * 60 * 1000)) / (60 * 1000));
 
     if (days > 0) return `${days}d ${hours}h ${minutes}m`;

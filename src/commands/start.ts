@@ -1,8 +1,8 @@
 import { Command } from 'commander';
+import ora from 'ora';
+import { getConfig } from '../config/config.js';
 import { DockerComposeService } from '../services/DockerComposeService.js';
 import { Logger } from '../utils/logger.js';
-import { getConfig } from '../config/config.js';
-import ora from 'ora';
 
 export const startCommand = new Command('start')
   .description('Démarrer Jellyfin et les services associés')
@@ -20,8 +20,10 @@ export const startCommand = new Command('start')
         spinner.stop();
 
         if (status.isRunning && !options.force) {
-          Logger.warning('Les services sont déjà en cours d\'exécution');
-          Logger.info('Utilisez --force pour redémarrer ou "jellyflyzerd stop" pour les arrêter');
+          Logger.warning("Les services sont déjà en cours d'exécution");
+          Logger.info(
+            'Utilisez --force pour redémarrer ou "jellyflyzerd stop" pour les arrêter',
+          );
           return;
         }
 
@@ -34,7 +36,9 @@ export const startCommand = new Command('start')
       }
 
       // Démarrer les services
-      const startSpinner = ora('Démarrage des services (Jellyfin + Nginx)...').start();
+      const startSpinner = ora(
+        'Démarrage des services (Jellyfin + Nginx)...',
+      ).start();
       const result = await dockerService.start();
 
       if (result.success) {
@@ -42,9 +46,13 @@ export const startCommand = new Command('start')
 
         console.log();
         Logger.info('🌐 Accès disponible à:');
-        console.log(`   🏠 Local: http://${config.network.localIP}:${config.jellyfin.port}`);
+        console.log(
+          `   🏠 Local: http://${config.network.localIP}:${config.jellyfin.port}`,
+        );
         if (config.network.externalDomain) {
-          console.log(`   🌍 Externe: https://${config.network.externalDomain}`);
+          console.log(
+            `   🌍 Externe: https://${config.network.externalDomain}`,
+          );
         }
 
         console.log();
@@ -52,15 +60,16 @@ export const startCommand = new Command('start')
         console.log('   📊 Statut: jellyflyzerd status');
         console.log('   📋 Logs: jellyflyzerd logs');
         console.log('   🛑 Arrêt: jellyflyzerd stop');
-
       } else {
         startSpinner.fail('Échec du démarrage');
         Logger.error(result.message, result.error);
         process.exit(1);
       }
-
     } catch (error) {
-      Logger.error('Erreur inattendue lors du démarrage', error instanceof Error ? error : undefined);
+      Logger.error(
+        'Erreur inattendue lors du démarrage',
+        error instanceof Error ? error : undefined,
+      );
       process.exit(1);
     }
   });

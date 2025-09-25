@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 
+// Informations du package
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
-import { Logger } from './utils/logger.js';
-
+import { logsCommand } from './commands/logs.js';
+import { startCommand } from './commands/start.js';
 // Import des commandes
 import { statusCommand } from './commands/status.js';
-import { startCommand } from './commands/start.js';
 import { stopCommand } from './commands/stop.js';
-import { logsCommand } from './commands/logs.js';
-
-// Informations du package
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { Logger } from './utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'));
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, '../package.json'), 'utf8'),
+);
 
 // Configuration du CLI principal
 const program = new Command();
@@ -25,10 +25,10 @@ program
   .name('jellyflyzerd')
   .description('🎬 Gestionnaire Jellyfin moderne avec Docker et TypeScript')
   .version(packageJson.version)
-  .helpOption('-h, --help', 'Afficher l\'aide')
+  .helpOption('-h, --help', "Afficher l'aide")
   .configureHelp({
     sortSubcommands: true,
-    showGlobalOptions: true
+    showGlobalOptions: true,
   });
 
 // Ajout des commandes
@@ -43,7 +43,7 @@ program.action(() => {
     `Version ${packageJson.version}`,
     'Gestionnaire Jellyfin moderne',
     '',
-    'Utilisez --help pour voir les commandes disponibles'
+    'Utilisez --help pour voir les commandes disponibles',
   ]);
 
   console.log();
@@ -56,7 +56,7 @@ program.action(() => {
   console.log();
   Logger.info('💡 Aide détaillée:');
   console.log('  jellyflyzerd --help   - Liste complète des commandes');
-  console.log('  jellyflyzerd <cmd> -h - Aide d\'une commande spécifique');
+  console.log("  jellyflyzerd <cmd> -h - Aide d'une commande spécifique");
 });
 
 // Gestion des erreurs globales
@@ -66,7 +66,10 @@ process.on('uncaughtException', (error) => {
 });
 
 process.on('unhandledRejection', (reason) => {
-  Logger.error('Promise rejetée:', reason instanceof Error ? reason : new Error(String(reason)));
+  Logger.error(
+    'Promise rejetée:',
+    reason instanceof Error ? reason : new Error(String(reason)),
+  );
   process.exit(1);
 });
 
