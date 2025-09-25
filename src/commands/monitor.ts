@@ -1,5 +1,5 @@
-import { Command } from 'commander';
 import { execSync } from 'node:child_process';
+import { Command } from 'commander';
 import { Logger } from '../utils/logger.js';
 
 export const monitorCommand = new Command('monitor')
@@ -7,9 +7,9 @@ export const monitorCommand = new Command('monitor')
   .option('--nginx', 'Monitorer uniquement les logs nginx')
   .option('--jellyfin', 'Monitorer uniquement les logs jellyfin')
   .option('--live', 'Mode temps réel (tail -f)')
-  .option('--attacks', 'Afficher uniquement les tentatives d\'attaque')
+  .option('--attacks', "Afficher uniquement les tentatives d'attaque")
   .option('--errors', 'Afficher les erreurs de configuration (4xx/5xx)')
-  .option('--stats', 'Afficher les statistiques d\'accès')
+  .option('--stats', "Afficher les statistiques d'accès")
   .option('--tail <n>', 'Nombre de lignes à afficher', '100')
   .action(async (options) => {
     try {
@@ -21,12 +21,12 @@ export const monitorCommand = new Command('monitor')
       }
 
       if (options.attacks) {
-        await showAttacks(parseInt(options.tail));
+        await showAttacks(parseInt(options.tail, 10));
         return;
       }
 
       if (options.errors) {
-        await showErrors(parseInt(options.tail));
+        await showErrors(parseInt(options.tail, 10));
         return;
       }
 
@@ -36,22 +36,30 @@ export const monitorCommand = new Command('monitor')
       }
 
       // Mode par défaut : afficher les logs récents
-      await showRecentLogs(options, parseInt(options.tail));
-
+      await showRecentLogs(options, parseInt(options.tail, 10));
     } catch (error) {
-      Logger.error('Erreur lors du monitoring', error instanceof Error ? error : undefined);
+      Logger.error(
+        'Erreur lors du monitoring',
+        error instanceof Error ? error : undefined,
+      );
       process.exit(1);
     }
   });
 
-async function showRecentLogs(options: any, tail: number): Promise<void> {
+async function showRecentLogs(
+  options: { nginx?: boolean; jellyfin?: boolean },
+  tail: number,
+): Promise<void> {
   console.log('📋 LOGS RÉCENTS:\n');
 
   // Logs Nginx
   if (!options.jellyfin) {
     console.log('🟦 === NGINX ACCESS LOGS ===');
     try {
-      const nginxAccessLogs = execSync(`docker logs jellyflyzerd-nginx 2>/dev/null | tail -${tail}`, { encoding: 'utf-8' });
+      const nginxAccessLogs = execSync(
+        `docker logs jellyflyzerd-nginx 2>/dev/null | tail -${tail}`,
+        { encoding: 'utf-8' },
+      );
       if (nginxAccessLogs.trim()) {
         console.log(nginxAccessLogs);
       } else {
@@ -67,7 +75,10 @@ async function showRecentLogs(options: any, tail: number): Promise<void> {
   if (!options.nginx) {
     console.log('🎬 === JELLYFIN LOGS ===');
     try {
-      const jellyfinLogs = execSync(`docker logs jellyflyzerd-jellyfin 2>/dev/null | tail -${tail}`, { encoding: 'utf-8' });
+      const jellyfinLogs = execSync(
+        `docker logs jellyflyzerd-jellyfin 2>/dev/null | tail -${tail}`,
+        { encoding: 'utf-8' },
+      );
       if (jellyfinLogs.trim()) {
         console.log(jellyfinLogs);
       } else {
@@ -83,7 +94,10 @@ async function showErrors(tail: number): Promise<void> {
   console.log('❌ ERREURS DE CONFIGURATION DÉTECTÉES:\n');
 
   try {
-    const nginxLogs = execSync(`docker logs jellyflyzerd-nginx 2>/dev/null | tail -${tail * 3}`, { encoding: 'utf-8' });
+    const nginxLogs = execSync(
+      `docker logs jellyflyzerd-nginx 2>/dev/null | tail -${tail * 3}`,
+      { encoding: 'utf-8' },
+    );
 
     if (nginxLogs.trim()) {
       const lines = nginxLogs.split('\n');
@@ -92,10 +106,11 @@ async function showErrors(tail: number): Promise<void> {
       for (const line of lines) {
         if (line.trim()) {
           // Détecter les erreurs 4xx et 5xx (sauf 404 normaux)
-          if ((line.includes(' 40') || line.includes(' 50')) &&
-              !line.includes(' 404 ') &&
-              line.includes(' - ')) {
-
+          if (
+            (line.includes(' 40') || line.includes(' 50')) &&
+            !line.includes(' 404 ') &&
+            line.includes(' - ')
+          ) {
             if (line.includes(' 502 ')) {
               console.log(`🔧 CONFIG: ${line}`);
             } else if (line.includes(' 50')) {
@@ -113,19 +128,21 @@ async function showErrors(tail: number): Promise<void> {
       } else {
         console.log(`\n📊 Total: ${errorCount} erreur(s) détectée(s)`);
         if (nginxLogs.includes(' 502 ')) {
-          console.log('\n💡 Erreurs 502: Vérifiez que Jellyfin est démarré et accessible');
+          console.log(
+            '\n💡 Erreurs 502: Vérifiez que Jellyfin est démarré et accessible',
+          );
         }
       }
     } else {
       console.log('Aucun log à analyser');
     }
-  } catch (error) {
-    console.log('❌ Impossible d\'analyser les erreurs');
+  } catch {
+    console.log("❌ Impossible d'analyser les erreurs");
   }
 }
 
 async function showAttacks(tail: number): Promise<void> {
-  console.log('🚨 TENTATIVES D\'ATTAQUE DÉTECTÉES:\n');
+  console.log("🚨 TENTATIVES D'ATTAQUE DÉTECTÉES:\n");
 
   const suspiciousPatterns = [
     // Attaques courantes (fichiers spécifiques)
@@ -161,7 +178,10 @@ async function showAttacks(tail: number): Promise<void> {
   ];
 
   try {
-    const nginxLogs = execSync(`docker logs jellyflyzerd-nginx 2>/dev/null | tail -${tail * 5}`, { encoding: 'utf-8' });
+    const nginxLogs = execSync(
+      `docker logs jellyflyzerd-nginx 2>/dev/null | tail -${tail * 5}`,
+      { encoding: 'utf-8' },
+    );
 
     if (nginxLogs.trim()) {
       const lines = nginxLogs.split('\n');
@@ -170,12 +190,18 @@ async function showAttacks(tail: number): Promise<void> {
       for (const line of lines) {
         if (line.trim()) {
           // Ignorer les logs normaux d'initialisation Docker
-          if (line.includes('/docker-entrypoint') || line.includes('Sourcing')) {
+          if (
+            line.includes('/docker-entrypoint') ||
+            line.includes('Sourcing')
+          ) {
             continue;
           }
 
           // Ignorer les erreurs 502 avec navigateurs normaux (problèmes de config, pas d'attaque)
-          if (line.includes(' 502 ') && (line.includes('Mozilla/') || line.includes('Chrome/'))) {
+          if (
+            line.includes(' 502 ') &&
+            (line.includes('Mozilla/') || line.includes('Chrome/'))
+          ) {
             continue;
           }
 
@@ -195,26 +221,31 @@ async function showAttacks(tail: number): Promise<void> {
       }
 
       if (attackCount === 0) {
-        console.log('✅ Aucune tentative d\'attaque récente détectée');
+        console.log("✅ Aucune tentative d'attaque récente détectée");
       } else {
-        console.log(`\n📊 Total: ${attackCount} tentative(s) d'attaque détectée(s)`);
+        console.log(
+          `\n📊 Total: ${attackCount} tentative(s) d'attaque détectée(s)`,
+        );
       }
     } else {
       console.log('Aucun log à analyser');
     }
-  } catch (error) {
-    console.log('❌ Impossible d\'analyser les logs d\'attaque');
+  } catch {
+    console.log("❌ Impossible d'analyser les logs d'attaque");
   }
 }
 
 async function showStats(): Promise<void> {
-  console.log('📊 STATISTIQUES D\'ACCÈS:\n');
+  console.log("📊 STATISTIQUES D'ACCÈS:\n");
 
   try {
-    const nginxLogs = execSync('docker logs jellyflyzerd-nginx 2>/dev/null | tail -1000', { encoding: 'utf-8' });
+    const nginxLogs = execSync(
+      'docker logs jellyflyzerd-nginx 2>/dev/null | tail -1000',
+      { encoding: 'utf-8' },
+    );
 
     if (nginxLogs.trim()) {
-      const lines = nginxLogs.split('\n').filter(line => line.trim());
+      const lines = nginxLogs.split('\n').filter((line) => line.trim());
 
       // Compter les IPs
       const ips = new Map<string, number>();
@@ -246,37 +277,51 @@ async function showStats(): Promise<void> {
 
       // Afficher les tops IPs
       console.log('🌐 TOP IPs:');
-      const topIps = Array.from(ips.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      const topIps = Array.from(ips.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
       for (const [ip, count] of topIps) {
         console.log(`  ${ip}: ${count} requêtes`);
       }
 
       // Afficher les status codes
       console.log('\n📈 STATUS CODES:');
-      const sortedStatus = Array.from(statusCodes.entries()).sort((a, b) => b[1] - a[1]);
+      const sortedStatus = Array.from(statusCodes.entries()).sort(
+        (a, b) => b[1] - a[1],
+      );
       for (const [status, count] of sortedStatus) {
-        const emoji = status.startsWith('2') ? '✅' : status.startsWith('4') ? '⚠️' : status.startsWith('5') ? '❌' : '📊';
+        const emoji = status.startsWith('2')
+          ? '✅'
+          : status.startsWith('4')
+            ? '⚠️'
+            : status.startsWith('5')
+              ? '❌'
+              : '📊';
         console.log(`  ${emoji} ${status}: ${count} requêtes`);
       }
 
       // Afficher les tops User-Agents
       console.log('\n🤖 TOP USER-AGENTS:');
-      const topUAs = Array.from(userAgents.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const topUAs = Array.from(userAgents.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
       for (const [ua, count] of topUAs) {
         console.log(`  ${count}x: ${ua}`);
       }
 
       console.log(`\n📊 Total analysé: ${lines.length} requêtes`);
-
     } else {
       console.log('Aucune donnée à analyser');
     }
-  } catch (error) {
+  } catch {
     console.log('❌ Impossible de générer les statistiques');
   }
 }
 
-async function startLiveMonitoring(options: any): Promise<void> {
+async function startLiveMonitoring(options: {
+  nginx?: boolean;
+  jellyfin?: boolean;
+}): Promise<void> {
   console.log('🔴 MONITORING EN TEMPS RÉEL (Ctrl+C pour arrêter):\n');
 
   const containers = [];
@@ -295,31 +340,34 @@ async function startLiveMonitoring(options: any): Promise<void> {
 
       execSync(command, {
         stdio: 'inherit',
-        cwd: process.cwd()
+        cwd: process.cwd(),
       });
     } else {
       // Plusieurs conteneurs : utiliser docker-compose logs si disponible
       try {
-        const composeCommand = 'docker-compose -f docker/docker-compose.yml logs -f --tail=10 nginx jellyfin';
+        const composeCommand =
+          'docker-compose -f docker/docker-compose.yml logs -f --tail=10 nginx jellyfin';
         console.log('Suivi: nginx + jellyfin via docker-compose\n');
 
         execSync(composeCommand, {
           stdio: 'inherit',
-          cwd: process.cwd()
+          cwd: process.cwd(),
         });
       } catch {
         // Fallback : surveiller le premier conteneur seulement
-        console.log('⚠️ Impossible de surveiller plusieurs conteneurs simultanément');
+        console.log(
+          '⚠️ Impossible de surveiller plusieurs conteneurs simultanément',
+        );
         console.log(`Surveillance de ${containers[0]} uniquement:\n`);
 
         const fallbackCommand = `docker logs -f --tail=10 ${containers[0]} 2>&1`;
         execSync(fallbackCommand, {
           stdio: 'inherit',
-          cwd: process.cwd()
+          cwd: process.cwd(),
         });
       }
     }
-  } catch (error) {
+  } catch {
     // Normal si l'utilisateur fait Ctrl+C
     console.log('\n⏹️ Monitoring arrêté');
   }

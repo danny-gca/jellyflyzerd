@@ -156,7 +156,7 @@ export class SecurityChecker {
             this.addCheck(
               'Fail2ban',
               'pass',
-              'Fail2ban actif (recommandé pour l\'accès externe)',
+              "Fail2ban actif (recommandé pour l'accès externe)",
               '',
               false,
             );
@@ -164,7 +164,7 @@ export class SecurityChecker {
             this.addCheck(
               'Fail2ban',
               'warn',
-              'Fail2ban non actif mais recommandé pour l\'accès externe',
+              "Fail2ban non actif mais recommandé pour l'accès externe",
               'Démarrez fail2ban: sudo systemctl start fail2ban',
               false,
             );
@@ -174,7 +174,7 @@ export class SecurityChecker {
           this.addCheck(
             'Fail2ban',
             'warn',
-            'Fail2ban installé mais non démarré (WSL) - recommandé pour l\'accès externe',
+            "Fail2ban installé mais non démarré (WSL) - recommandé pour l'accès externe",
             'Configurez fail2ban pour protéger contre les attaques sur votre domaine externe',
             false,
           );
@@ -183,7 +183,7 @@ export class SecurityChecker {
         this.addCheck(
           'Fail2ban',
           'warn',
-          'Fail2ban non installé - recommandé pour l\'accès externe',
+          "Fail2ban non installé - recommandé pour l'accès externe",
           'Installez fail2ban pour protéger votre domaine externe: sudo apt install fail2ban',
           false,
         );
@@ -193,7 +193,7 @@ export class SecurityChecker {
         'Fail2ban',
         'warn',
         'Impossible de vérifier fail2ban',
-        'Protection recommandée pour l\'accès externe',
+        "Protection recommandée pour l'accès externe",
         false,
       );
     }
@@ -206,7 +206,7 @@ export class SecurityChecker {
       'SSH Config',
       'not_applicable',
       'SSH non applicable dans un environnement Docker local',
-      'L\'accès se fait via l\'interface web Jellyfin',
+      "L'accès se fait via l'interface web Jellyfin",
       false,
     );
   }
@@ -598,8 +598,14 @@ export class SecurityChecker {
   private async checkDockerNetworking(): Promise<void> {
     try {
       // Vérifier l'isolement réseau Docker
-      const networks = execSync('docker network ls --format "{{.Name}}"', { encoding: 'utf-8' }).trim().split('\n');
-      const hasCustomNetwork = networks.some(network => network.includes('jellyflyzerd'));
+      const networks = execSync('docker network ls --format "{{.Name}}"', {
+        encoding: 'utf-8',
+      })
+        .trim()
+        .split('\n');
+      const hasCustomNetwork = networks.some((network) =>
+        network.includes('jellyflyzerd'),
+      );
 
       if (hasCustomNetwork) {
         this.addCheck(
@@ -620,7 +626,10 @@ export class SecurityChecker {
       }
 
       // Vérifier l'exposition des ports
-      const jellyfinPorts = execSync('docker port jellyflyzerd-jellyfin 2>/dev/null || echo "not_running"', { encoding: 'utf-8' }).trim();
+      const jellyfinPorts = execSync(
+        'docker port jellyflyzerd-jellyfin 2>/dev/null || echo "not_running"',
+        { encoding: 'utf-8' },
+      ).trim();
       if (jellyfinPorts !== 'not_running') {
         const exposedPorts = jellyfinPorts.split('\n').length;
         if (exposedPorts <= 3) {
@@ -636,7 +645,7 @@ export class SecurityChecker {
             'Docker Port Exposure',
             'warn',
             `Nombreux ports exposés: ${exposedPorts}`,
-            'Limitez l\'exposition des ports au minimum nécessaire',
+            "Limitez l'exposition des ports au minimum nécessaire",
             false,
           );
         }
@@ -902,17 +911,23 @@ export class SecurityChecker {
 
       try {
         // Test de connectivité externe
-        const response = execSync(`curl -s -I https://${domain} --max-time 10 || echo "failed"`, {
-          encoding: 'utf-8',
-          stdio: ['pipe', 'pipe', 'pipe']
-        }).trim();
+        const response = execSync(
+          `curl -s -I https://${domain} --max-time 10 || echo "failed"`,
+          {
+            encoding: 'utf-8',
+            stdio: ['pipe', 'pipe', 'pipe'],
+          },
+        ).trim();
 
-        if (response.includes('HTTP/2 200') || response.includes('HTTP/1.1 200')) {
+        if (
+          response.includes('HTTP/2 200') ||
+          response.includes('HTTP/1.1 200')
+        ) {
           this.addCheck(
             'External Access',
             'pass',
             'Accès externe fonctionnel via le domaine configuré',
-            'Surveillez les logs d\'accès régulièrement',
+            "Surveillez les logs d'accès régulièrement",
             false,
           );
 
@@ -929,14 +944,14 @@ export class SecurityChecker {
             'External Access',
             'warn',
             'Accès externe non accessible (peut être intentionnel)',
-            'Vérifiez la configuration si l\'accès externe est souhaité',
+            "Vérifiez la configuration si l'accès externe est souhaité",
             false,
           );
         } else {
           this.addCheck(
             'External Access',
             'warn',
-            'Réponse inattendue de l\'accès externe',
+            "Réponse inattendue de l'accès externe",
             'Vérifiez la configuration nginx et les certificats',
             false,
           );
@@ -945,8 +960,8 @@ export class SecurityChecker {
         this.addCheck(
           'External Access',
           'warn',
-          'Impossible de tester l\'accès externe',
-          'Testez manuellement l\'accès depuis un appareil externe',
+          "Impossible de tester l'accès externe",
+          "Testez manuellement l'accès depuis un appareil externe",
           false,
         );
       }
@@ -975,8 +990,8 @@ export class SecurityChecker {
       this.addCheck(
         'External Access Security',
         'warn',
-        'Erreur lors de la vérification de l\'accès externe',
-        'Vérifiez manuellement la sécurité de l\'accès externe',
+        "Erreur lors de la vérification de l'accès externe",
+        "Vérifiez manuellement la sécurité de l'accès externe",
         false,
       );
     }
