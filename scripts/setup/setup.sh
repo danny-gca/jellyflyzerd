@@ -140,8 +140,8 @@ HTTPS_PORT=443
 
 # Chemins Docker
 MEDIA_PATH=$MEDIA_PATH
-CONFIG_PATH=./data/config
-CACHE_PATH=./data/cache
+CONFIG_PATH=\${CONFIG_PATH}
+CACHE_PATH=\${CACHE_PATH}
 
 # Environnement
 NODE_ENV=production

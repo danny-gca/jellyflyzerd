@@ -11,7 +11,7 @@ User=%i
 Group=%i
 WorkingDirectory=/home/%i/projects/jellyflyzerd
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/%i/.local/bin"
-ExecStart=/home/%i/projects/jellyflyzerd/start-on-boot.sh
+ExecStart=/home/%i/projects/jellyflyzerd/scripts/setup/start-on-boot.sh
 TimeoutStartSec=30
 TimeoutStopSec=30
 

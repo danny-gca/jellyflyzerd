@@ -15,7 +15,7 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
 fi
 
 # Variables avec fallbacks
-PROJECT_DIR="${PROJECT_DIR:-$SCRIPT_DIR}"
+PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 SYSTEM_USER="${SYSTEM_USER:-$CURRENT_USER}"
 
 LOG_FILE="$PROJECT_DIR/logs/startup.log"

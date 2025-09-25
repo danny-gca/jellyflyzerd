@@ -13,9 +13,9 @@ const envSchema = z.object({
   HTTPS_PORT: z.string().transform(Number).pipe(z.number().int().positive()).default('443'),
   LOCAL_IP: z.string().ip().optional().default('localhost'),
   EXTERNAL_DOMAIN: z.string().optional().default(''),
-  MEDIA_PATH: z.string().optional().default('~/media'),
-  CONFIG_PATH: z.string().optional().default('./config'),
-  CACHE_PATH: z.string().optional().default('./cache'),
+  MEDIA_PATH: z.string().optional().default('/your-media'),
+  CONFIG_PATH: z.string().optional().default('/your-config'),
+  CACHE_PATH: z.string().optional().default('/your-cache'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   TZ: z.string().optional().default('Europe/Paris'),
 });

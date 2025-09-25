@@ -18,7 +18,7 @@ set "POSSIBLE_PATHS=/home/%WSL_USER%/projects/jellyflyzerd /home/%WSL_USER%/jell
 REM Chercher le projet
 set "PROJECT_FOUND="
 for %%p in (%POSSIBLE_PATHS%) do (
-    wsl test -f "%%p/start-on-boot.sh" 2>nul && set "PROJECT_FOUND=%%p" && goto :found
+    wsl test -f "%%p/scripts/setup/start-on-boot.sh" 2>nul && set "PROJECT_FOUND=%%p" && goto :found
 )
 
 echo Erreur: Projet jellyflyzerd non trouve dans les emplacements:
@@ -30,7 +30,7 @@ exit /b 1
 echo Projet trouve: %PROJECT_FOUND%
 
 REM Demarrer le script
-start /B wsl -e bash "%PROJECT_FOUND%/start-on-boot.sh"
+start /B wsl -e bash "%PROJECT_FOUND%/scripts/setup/start-on-boot.sh"
 
 REM Attendre un peu pour laisser le temps au script de demarrer
 timeout /t 3 /nobreak >nul
@@ -38,5 +38,5 @@ timeout /t 3 /nobreak >nul
 echo Jellyflyzerd demarre en arriere-plan
 echo Ce script peut etre ferme maintenant
 
-REM Fermer automatiquement la fenetre apres 3 secondes
-timeout /t 3 /nobreak >nul
+REM Attendre que l'utilisateur appuie sur une touche
+pause

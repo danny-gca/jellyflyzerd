@@ -6,7 +6,8 @@
 set -e
 
 CURRENT_USER="${1:-$(whoami)}"
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 echo "Installation du service systemd pour l'utilisateur: $CURRENT_USER"
 echo "Repertoire du projet: $PROJECT_DIR"
@@ -24,7 +25,7 @@ User=$CURRENT_USER
 Group=$CURRENT_USER
 WorkingDirectory=$PROJECT_DIR
 Environment=\"PATH=/usr/local/bin:/usr/bin:/bin:/home/$CURRENT_USER/.local/bin\"
-ExecStart=$PROJECT_DIR/start-on-boot.sh
+ExecStart=$PROJECT_DIR/scripts/setup/start-on-boot.sh
 TimeoutStartSec=30
 TimeoutStopSec=30
 
@@ -32,12 +33,12 @@ TimeoutStopSec=30
 WantedBy=multi-user.target"
 
 # Ecrire le service
-echo "$SERVICE_CONTENT" > "$PROJECT_DIR/jellyflyzerd-$CURRENT_USER.service"
+echo "$SERVICE_CONTENT" > "$PROJECT_DIR/scripts/jellyflyzerd-$CURRENT_USER.service"
 
-echo "✅ Service créé: jellyflyzerd-$CURRENT_USER.service"
+echo "✅ Service créé: scripts/jellyflyzerd-$CURRENT_USER.service"
 echo ""
 echo "Pour installer le service:"
-echo "  sudo cp jellyflyzerd-$CURRENT_USER.service /etc/systemd/system/"
+echo "  sudo cp scripts/jellyflyzerd-$CURRENT_USER.service /etc/systemd/system/"
 echo "  sudo systemctl daemon-reload"
 echo "  sudo systemctl enable jellyflyzerd-$CURRENT_USER"
 echo "  sudo systemctl start jellyflyzerd-$CURRENT_USER"
