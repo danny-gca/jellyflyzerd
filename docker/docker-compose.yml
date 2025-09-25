@@ -30,10 +30,6 @@ services:
       - "7359:7359/udp"  # Auto-discovery (optionnel)
       - "1900:1900/udp"  # DLNA (optionnel)
     restart: unless-stopped
-    command: >
-      sh -c "mkdir -p /tmp/jellyfin-persistent &&
-             ln -sf /config/root /tmp/jellyfin-persistent/root &&
-             exec /jellyfin/jellyfin"
 
     # Sécurité renforcée
     security_opt:
