@@ -46,30 +46,36 @@ analyze_nginx_logs() {
 
     # Analyser les codes d'erreur
     local error_4xx
-    error_4xx=$(echo "$nginx_logs" | grep -c '" 4[0-9][0-9] ' || echo "0")
     local error_5xx
+    error_4xx=$(echo "$nginx_logs" | grep -c '" 4[0-9][0-9] ' || echo "0")
     error_5xx=$(echo "$nginx_logs" | grep -c '" 5[0-9][0-9] ' || echo "0")
 
-    if [ "$error_4xx" -gt 0 ]; then
-        log_color "$YELLOW" "Erreurs 4xx: $error_4xx"
-    fi
-    if [ "$error_5xx" -gt 0 ]; then
-        log_color "$RED" "Erreurs 5xx: $error_5xx"
-    fi
+    [ "$error_4xx" -gt 0 ] && log_color "$YELLOW" "Erreurs 4xx: $error_4xx"
+    [ "$error_5xx" -gt 0 ] && log_color "$RED" "Erreurs 5xx: $error_5xx"
 
-    # Détecter les tentatives d'attaque
+    # Détecter les tentatives d'attaque (en ignorant IP internes)
     local attacks
-    attacks=$(echo "$nginx_logs" | grep -E -i '(wp-admin|wp-login|phpmyadmin|admin|config\.php|\.env|xmlrpc)' | wc -l || echo "0")
+    attacks=$(echo "$nginx_logs" | grep -E -i '(wp-admin|wp-login|phpmyadmin|admin|config\.php|\.env|xmlrpc)' \
+              | grep -vE '^(172\.16|172\.17|172\.18|172\.19|172\.20|172\.21|10\.|192\.168)' | wc -l || echo "0")
+
     if [ "$attacks" -gt 0 ]; then
         log_color "$RED" "🚨 Tentatives d'attaque détectées: $attacks"
-        echo "$nginx_logs" | grep -E -i '(wp-admin|wp-login|phpmyadmin|admin|config\.php|\.env|xmlrpc)' | tail -5 >> "$LOG_FILE"
+        echo "$nginx_logs" | grep -E -i '(wp-admin|wp-login|phpmyadmin|admin|config\.php|\.env|xmlrpc)' \
+             | grep -vE '^(172\.16|172\.17|172\.18|172\.19|172\.20|172\.21|10\.|192\.168)' | tail -5 >> "$LOG_FILE"
     fi
 
-    # Top IPs
+    # Top IPs externes uniquement
     local top_ips
-    top_ips=$(echo "$nginx_logs" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | sort | uniq -c | sort -rn | head -5)
+    # Top IPs externes uniquement (avec filtrage IPs valides)
+    top_ips=$(echo "$nginx_logs" \
+        | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' \
+        | awk -F'.' '$1<=255 && $2<=255 && $3<=255 && $4<=255' \
+        | grep -vE '^(172\.1[6-9]|172\.2[0-9]|172\.3[0-1]|10\.|192\.168)' \
+        | sort | uniq -c | sort -rn | head -5)
+
+
     if [ -n "$top_ips" ]; then
-        log "Top IPs:"
+        log "Top IPs externes:"
         echo "$top_ips" | while read count ip; do
             if [ "$count" -gt 100 ]; then
                 log_color "$RED" "  $ip: $count requêtes (SUSPECT)"
@@ -81,6 +87,7 @@ analyze_nginx_logs() {
         done
     fi
 }
+
 
 # Fonction pour analyser les logs jellyfin
 analyze_jellyfin_logs() {
