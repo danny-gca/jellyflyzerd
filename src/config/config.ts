@@ -27,7 +27,7 @@ const envSchema = z.object({
     .transform(Number)
     .pipe(z.number().int().positive())
     .default('443'),
-  LOCAL_IP: z.string().ip().optional().default('localhost'),
+  LOCAL_IP: z.string().optional().default('127.0.0.1'),
   EXTERNAL_DOMAIN: z.string().optional().default(''),
   MEDIA_PATH: z.string().optional().default('/your-media'),
   CONFIG_PATH: z.string().optional().default('/your-config'),

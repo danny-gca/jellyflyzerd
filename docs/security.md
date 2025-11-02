@@ -19,7 +19,52 @@ jellyflyzerd security --json
 
 # Sauvegarder le rapport
 jellyflyzerd security --save security-report.json
+
+# Mode correction automatique (interactif)
+jellyflyzerd security --fix
 ```
+
+### Mode correction automatique
+
+Le mode `--fix` permet de corriger automatiquement certains problèmes détectés lors de l'audit. Les corrections disponibles incluent :
+
+- ✅ **Mises à jour système** : Installation automatique des mises à jour de paquets (`apt update && apt upgrade`)
+- 🔒 **Permissions configuration Jellyfin** : Correction des permissions du répertoire de configuration (777 → 755)
+- 👤 **Utilisateur du conteneur** : Configuration automatique de PUID/PGID pour éviter d'exécuter en root
+- 🛡️ **Capabilities du conteneur** : Ajout des restrictions de capabilities Docker (cap_drop: ALL + whitelist minimale)
+
+#### Fonctionnement
+
+1. L'audit de sécurité s'exécute normalement
+2. Les problèmes corrigibles sont listés
+3. Confirmation interactive pour chaque correction
+4. Exécution des corrections approuvées
+5. Rapport des résultats
+
+#### Exemple d'utilisation
+
+```bash
+$ jellyflyzerd security --fix
+
+🔒 RAPPORT DE SÉCURITÉ JELLYFLYZERD
+...
+
+🔧 CORRECTIONS AUTOMATIQUES DISPONIBLES
+
+1 problème(s) peuvent être corrigés automatiquement:
+
+  • System Updates: 17 mises à jour disponibles
+    💡 Effectuez les mises à jour de sécurité
+
+? Voulez-vous procéder aux corrections automatiques disponibles ? (y/N)
+```
+
+#### Sécurité des corrections
+
+- **Confirmation requise** : Chaque correction importante nécessite une confirmation
+- **Exécution contrôlée** : Les modifications sont appliquées une par une
+- **Rapport détaillé** : Résumé des succès et échecs
+- **Réversibilité** : Les corrections peuvent être annulées individuellement
 
 ### Codes de sortie
 
@@ -53,8 +98,6 @@ sudo ufw enable
 - ✅ **Pass** : Actif avec jails configurées
 - ⚠️ **Warn** : Installé mais non actif (WSL)
 - ❌ **Fail** : Non installé
-
-**Spécifique à votre configuration** : Même en Docker local, Fail2ban est recommandé car votre service est exposé publiquement via `jellyflyzerd.freeboxos.fr`.
 
 ### 🐳 Sécurité Docker
 
@@ -92,7 +135,7 @@ services:
 
 ```bash
 # Votre configuration actuelle
-/etc/letsencrypt/live/jellyflyzerd.freeboxos.fr/
+/etc/letsencrypt/live/votredomaine.fr/
 ├── fullchain.pem    # Certificat complet
 ├── privkey.pem      # Clé privée
 ├── cert.pem         # Certificat seul
@@ -115,11 +158,11 @@ services:
 
 ### Vérifications spécifiques
 
-Votre configuration expose Jellyfin publiquement via `jellyflyzerd.freeboxos.fr`. L'audit inclut :
+Votre configuration expose Jellyfin publiquement via `votredomaine.fr`. L'audit inclut :
 
 #### Test d'accessibilité externe
 ```bash
-curl -s -I https://jellyflyzerd.freeboxos.fr --max-time 10
+curl -s -I https://votredomaine.fr --max-time 10
 ```
 
 #### Configuration Nginx sécurisée
@@ -277,7 +320,7 @@ fi
 ENABLE_FIREWALL=true
 ENABLE_FAIL2BAN=true
 ENABLE_HTTPS=true
-SSL_CERT_PATH=/etc/letsencrypt/live/jellyflyzerd.freeboxos.fr/
+SSL_CERT_PATH=/etc/letsencrypt/live/votredomaine.fr/
 SECURITY_HEADERS=true
 RATE_LIMITING=true
 ```
@@ -290,6 +333,63 @@ docker run --security-opt seccomp=default \
            --security-opt apparmor=docker-default \
            --security-opt no-new-privileges:true
 ```
+
+## 🔧 Corrections automatiques disponibles
+
+Le système de corrections automatiques (`--fix`) peut gérer les problèmes suivants :
+
+### ✅ Corrections actuellement implémentées
+
+#### 1. Mises à jour système
+
+**Détection** : `apt list --upgradable`
+**Correction** : `sudo apt update && sudo apt upgrade -y`
+
+**Conditions** :
+- Requiert confirmation interactive
+- Ne s'applique qu'aux systèmes basés sur Debian/Ubuntu
+- Nécessite les droits sudo
+
+**Exemple** :
+```bash
+$ jellyflyzerd security --fix
+
+⚠️  System Updates: 17 mises à jour disponibles
+   💡 Effectuez les mises à jour de sécurité
+
+? Voulez-vous procéder aux corrections automatiques disponibles ? Yes
+
+🔄 Correction de: System Updates...
+? Confirmer la correction de "System Updates" ? Yes
+
+📦 Mise à jour de la liste des paquets...
+⬆️  Installation des mises à jour...
+✅ 17 mise(s) à jour installée(s) avec succès
+
+📊 RÉSUMÉ DES CORRECTIONS
+  ✅ Réussies: 1
+  ❌ Échouées: 0
+  📝 Total: 1
+```
+
+### 🔄 Corrections futures prévues
+
+Les corrections suivantes seront ajoutées dans les prochaines versions :
+
+- **Permissions de fichiers** : Correction automatique des permissions trop larges
+- **Configuration firewall** : Activation et configuration d'UFW
+- **Configuration fail2ban** : Installation et activation
+- **Permissions SSL** : Correction des permissions des certificats
+- **Logrotate** : Configuration automatique
+- **Nettoyage d'espace disque** : Suppression des caches et logs anciens
+
+### 🔒 Sécurité du mode `--fix`
+
+- Chaque correction nécessite une **confirmation explicite**
+- Les modifications sont **journalisées**
+- Possibilité d'**annuler individuellement** chaque correction
+- **Aucune modification destructive** sans confirmation
+- Rapport détaillé des **succès et échecs**
 
 ## 📚 Ressources complémentaires
 

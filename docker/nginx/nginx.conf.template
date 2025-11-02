@@ -6,9 +6,36 @@ http {
     include       /etc/nginx/mime.types;
     default_type  application/octet-stream;
 
-    # Logging
-    access_log /var/log/nginx/access.log;
+    # Configuration pour récupérer la vraie IP depuis le proxy (VotreBox/reverse proxy)
+    # Faire confiance au réseau Docker et aux IPs privées
+    set_real_ip_from 172.16.0.0/12;   # Réseau Docker
+    set_real_ip_from 10.0.0.0/8;      # Réseau privé
+    set_real_ip_from 192.168.0.0/16;  # Réseau privé
+    real_ip_header X-Forwarded-For;
+    real_ip_recursive on;
+
+    # Format de log avec vraie IP
+    log_format main '$remote_addr - $remote_user [$time_local] '
+                    '"$request" $status $body_bytes_sent '
+                    '"$http_referer" "$http_user_agent"';
+
+    # Logging avec vraie IP
+    access_log /var/log/nginx/access.log main;
     error_log /var/log/nginx/error.log;
+
+    # Rate limiting zones
+    # Zone générale : 100 req/s pour permettre le chargement normal des pages web
+    # Burst élevé (200) pour gérer les pics de requêtes lors du chargement initial
+    limit_req_zone $binary_remote_addr zone=general:10m rate=100r/s;
+
+    # Zone API : limites plus strictes pour les endpoints API
+    limit_req_zone $binary_remote_addr zone=api:10m rate=50r/s;
+
+    # Zone bot : très restrictive pour les scanners détectés
+    limit_req_zone $binary_remote_addr zone=bot:10m rate=1r/s;
+
+    # Connection limiting : max 50 connexions simultanées par IP (suffisant pour HTTP/2)
+    limit_conn_zone $binary_remote_addr zone=addr:10m;
 
     # Proxy cache pour les images
     proxy_cache_path /tmp/nginx_cache levels=1:2 keys_zone=jellyfin_cache:10m max_size=1g inactive=60m use_temp_path=off;
@@ -54,6 +81,35 @@ http {
 
         # Large file uploads
         client_max_body_size 20G;
+
+        # Rate limiting global
+        # Burst élevé (200) pour gérer les pics lors du chargement des pages web
+        limit_req zone=general burst=200 nodelay;
+        # Max 50 connexions simultanées par IP (suffisant pour HTTP/2 multiplexing)
+        limit_conn addr 50;
+
+        # Bloquer les bots malveillants et scanners
+        if ($http_user_agent ~* (nmap|nikto|wikto|sf|sqlmap|bsqlbf|w3af|acunetix|havij|appscan|nessus|masscan|httperf|bench|siege|slowloris)) {
+            return 403;
+        }
+
+        # Bloquer les tentatives d'accès aux fichiers sensibles
+        location ~ /\.(env|git|svn|htaccess|htpasswd) {
+            deny all;
+            return 404;
+        }
+
+        # Bloquer les URLs suspectes
+        location ~ /(vendor|phpunit|config|admin/config|api/.env|\.aws|\.azure) {
+            deny all;
+            return 404;
+        }
+
+        # robots.txt pour bloquer les bad bots
+        location = /robots.txt {
+            add_header Content-Type text/plain;
+            return 200 "User-agent: *\nDisallow: /System/\nDisallow: /web/\n\n# Block malicious bots\nUser-agent: masscan\nUser-agent: nmap\nUser-agent: sqlmap\nUser-agent: nikto\nDisallow: /\n";
+        }
 
         # Jellyfin proxy
         location / {

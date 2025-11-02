@@ -1,5 +1,3 @@
-version: '3.8'
-
 name: jellyflyzerd
 
 services:
@@ -7,6 +5,8 @@ services:
     image: jellyfin/jellyfin:latest
     container_name: jellyflyzerd-jellyfin
 # user: 1000:1000  # Désactivé pour éviter les problèmes de permissions avec bind mounts
+    labels:
+      - "com.centurylinklabs.watchtower.scope=jellyflyzerd"
     environment:
       - PUID=1000
       - PGID=1000
@@ -35,6 +35,14 @@ services:
     security_opt:
       - no-new-privileges:true
 
+    # Restriction des capabilities
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+
     # Limitations des ressources (optionnel)
     deploy:
       resources:
@@ -55,6 +63,10 @@ services:
   nginx:
     image: nginx:alpine
     container_name: jellyflyzerd-nginx
+    labels:
+      - "com.centurylinklabs.watchtower.scope=jellyflyzerd"
+    environment:
+      - TZ=${TZ:-Europe/Paris}
     ports:
       - "80:80"
       - "443:443"
@@ -64,6 +76,52 @@ services:
     depends_on:
       - jellyfin
     restart: unless-stopped
+
+  # Watchtower - Mises à jour automatiques des conteneurs
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: jellyflyzerd-watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      # Vérifier les mises à jour tous les jours à 4h du matin
+      # Format cron: seconde minute heure jour mois jour_semaine
+      - WATCHTOWER_SCHEDULE=0 0 4 * * *
+      # Alternative: vérifier toutes les X secondes au démarrage (décommenter si préféré)
+      # - WATCHTOWER_POLL_INTERVAL=86400  # 86400 secondes = 24h
+      # Vérifier immédiatement au démarrage puis selon le schedule
+      - WATCHTOWER_RUN_ONCE=false
+      # Ne mettre à jour que les conteneurs jellyflyzerd
+      - WATCHTOWER_SCOPE=jellyflyzerd
+      # Nettoyer les anciennes images
+      - WATCHTOWER_CLEANUP=true
+      # Notification lors des mises à jour (optionnel)
+      - WATCHTOWER_NOTIFICATIONS=shoutrrr
+      - WATCHTOWER_NOTIFICATION_URL=${WATCHTOWER_NOTIFICATION_URL:-}
+      # Mode de mise à jour (monitor = affiche seulement, sans mettre à jour)
+      - WATCHTOWER_MONITOR_ONLY=${WATCHTOWER_MONITOR_ONLY:-false}
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.scope=jellyflyzerd"
+
+  # Fail2ban - Protection contre les attaques
+  fail2ban:
+    image: crazymax/fail2ban:latest
+    container_name: jellyflyzerd-fail2ban
+    network_mode: "host"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./fail2ban:/data
+      - /var/log:/var/log:ro
+    environment:
+      - TZ=${TZ:-Europe/Paris}
+      - F2B_LOG_LEVEL=INFO
+      - F2B_DB_PURGE_AGE=30d
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.scope=jellyflyzerd"
 
 networks:
   default:

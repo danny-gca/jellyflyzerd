@@ -13,30 +13,48 @@ export class DockerComposeService {
 
   async getStatus(): Promise<ServiceStatus> {
     try {
+      // Utiliser docker ps directement au lieu de docker-compose pour éviter les problèmes de .env
       const result = execSync(
-        `docker-compose -f "${this.composeFile}" ps --services --filter="status=running"`,
+        'docker ps --filter "name=jellyflyzerd-" --format "{{.Names}}"',
         {
-          cwd: this.projectDir,
           encoding: 'utf-8',
           stdio: ['pipe', 'pipe', 'pipe'],
         },
       );
 
-      const runningServices = result
+      const runningContainers = result
         .trim()
         .split('\n')
         .filter((s) => s.length > 0);
-      const isJellyfinRunning = runningServices.includes('jellyfin');
-      const isNginxRunning = runningServices.includes('nginx');
+
+      const isJellyfinRunning = runningContainers.some((c) =>
+        c.includes('jellyfin'),
+      );
+      const isNginxRunning = runningContainers.some((c) => c.includes('nginx'));
+      const isWatchtowerRunning = runningContainers.some((c) =>
+        c.includes('watchtower'),
+      );
+      const isFail2banRunning = runningContainers.some((c) =>
+        c.includes('fail2ban'),
+      );
+
+      // Compter tous les services
+      const servicesCount =
+        (isJellyfinRunning ? 1 : 0) +
+        (isNginxRunning ? 1 : 0) +
+        (isWatchtowerRunning ? 1 : 0) +
+        (isFail2banRunning ? 1 : 0);
 
       return {
-        isRunning: isJellyfinRunning,
+        isRunning: isJellyfinRunning || isNginxRunning,
         extra: {
           services: {
             jellyfin: isJellyfinRunning,
             nginx: isNginxRunning,
+            watchtower: isWatchtowerRunning,
+            fail2ban: isFail2banRunning,
           },
-          runningCount: runningServices.length,
+          runningCount: servicesCount,
         },
       };
     } catch (error) {

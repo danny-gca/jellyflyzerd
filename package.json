@@ -1,6 +1,6 @@
 {
   "name": "jellyflyzerd",
-  "version": "2.0.0-alpha.1",
+  "version": "2.1.0",
   "description": "Modern Jellyfin manager with TypeScript and Docker support",
   "main": "dist/index.js",
   "type": "module",
