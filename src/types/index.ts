@@ -3,7 +3,7 @@ export interface ServiceStatus {
   pid?: number;
   uptime?: string;
   user?: string;
-  extra?: any; // Pour les données supplémentaires (comme les services multiples)
+  extra?: Record<string, unknown>; // Pour les données supplémentaires (comme les services multiples)
 }
 
 export interface JellyfinConfig {
@@ -57,6 +57,6 @@ export interface Config {
 export interface CommandResult {
   success: boolean;
   message: string;
-  data?: any;
+  data?: unknown;
   error?: Error;
 }

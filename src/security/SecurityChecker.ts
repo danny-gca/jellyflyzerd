@@ -146,7 +146,7 @@ export class SecurityChecker {
           );
         }
       }
-    } catch (error) {
+    } catch (_error) {
       this.addCheck(
         'Firewall',
         'warn',
@@ -453,7 +453,7 @@ export class SecurityChecker {
       // Vérifier le socket Docker
       if (existsSync('/var/run/docker.sock')) {
         const socketStat = statSync('/var/run/docker.sock');
-        const mode = (socketStat.mode & parseInt('777', 8)).toString(8);
+        const mode = (socketStat.mode & 0o777).toString(8);
         if (mode === '660') {
           this.addCheck(
             'Docker Socket',
@@ -685,7 +685,7 @@ export class SecurityChecker {
           false,
         );
       }
-    } catch (error) {
+    } catch (_error) {
       this.addCheck(
         'Docker Network Security',
         'warn',
@@ -713,8 +713,11 @@ export class SecurityChecker {
             ?.split(':')
             .pop();
         })
-        .filter((port) => port && !isNaN(parseInt(port)))
-        .map((port) => parseInt(port!))
+        .filter(
+          (port): port is string =>
+            port !== undefined && !Number.isNaN(parseInt(port, 10)),
+        )
+        .map((port) => parseInt(port, 10))
         .filter((port, index, array) => array.indexOf(port) === index)
         .sort((a, b) => a - b);
 
@@ -777,7 +780,7 @@ export class SecurityChecker {
 
             // Vérifier les permissions du certificat
             const keyStats = statSync(keyFile);
-            const keyMode = (keyStats.mode & parseInt('777', 8)).toString(8);
+            const keyMode = (keyStats.mode & 0o777).toString(8);
             if (keyMode === '600' || keyMode === '400') {
               this.addCheck(
                 'SSL Key Permissions',
@@ -860,7 +863,7 @@ export class SecurityChecker {
 
         // Vérifier les permissions du répertoire de configuration
         const configStats = statSync(configPath);
-        const configMode = (configStats.mode & parseInt('777', 8)).toString(8);
+        const configMode = (configStats.mode & 0o777).toString(8);
         if (configMode === '755' || configMode === '750') {
           this.addCheck(
             'Jellyfin Config Permissions',
@@ -1018,7 +1021,7 @@ export class SecurityChecker {
           false,
         );
       }
-    } catch (error) {
+    } catch (_error) {
       this.addCheck(
         'External Access Security',
         'warn',
@@ -1036,7 +1039,7 @@ export class SecurityChecker {
         'apt list --upgradable 2>/dev/null | grep -v "WARNING" | wc -l',
         { encoding: 'utf-8' },
       ).trim();
-      const updateCount = parseInt(updates) - 1; // -1 pour enlever la ligne d'en-tête
+      const updateCount = parseInt(updates, 10) - 1; // -1 pour enlever la ligne d'en-tête
 
       if (updateCount === 0) {
         this.addCheck('System Updates', 'pass', 'Système à jour', '', false);
@@ -1067,7 +1070,7 @@ export class SecurityChecker {
           true,
         );
       }
-    } catch (error) {
+    } catch (_error) {
       this.addCheck(
         'System Updates',
         'warn',
@@ -1097,7 +1100,7 @@ export class SecurityChecker {
       const diskUsage = execSync("df -h / | tail -1 | awk '{print $5}'", {
         encoding: 'utf-8',
       }).trim();
-      const usage = parseInt(diskUsage.replace('%', ''));
+      const usage = parseInt(diskUsage.replace('%', ''), 10);
 
       if (usage < 80) {
         this.addCheck(
@@ -1320,7 +1323,7 @@ export class SecurityChecker {
 
   private async fixContainerUser(): Promise<AutoFixResult> {
     try {
-      Logger.info('👤 Configuration de l\'utilisateur du conteneur...');
+      Logger.info("👤 Configuration de l'utilisateur du conteneur...");
 
       const projectDir = process.env.PROJECT_DIR || process.cwd();
       const envPath = `${projectDir}/.env`;
@@ -1346,7 +1349,7 @@ export class SecurityChecker {
 
         if (!puidExists && !pgidExists) {
           envContent += dockerSection + puidLine + pgidLine;
-          envExampleContent += dockerSection + 'PUID=1000\n' + 'PGID=1000\n';
+          envExampleContent += `${dockerSection}PUID=1000\nPGID=1000\n`;
         } else if (!puidExists) {
           envContent += puidLine;
           envExampleContent += 'PUID=1000\n';
@@ -1378,7 +1381,7 @@ export class SecurityChecker {
       return {
         checkName: 'Container User',
         success: false,
-        message: 'Échec de la configuration de l\'utilisateur du conteneur',
+        message: "Échec de la configuration de l'utilisateur du conteneur",
         error: error instanceof Error ? error.message : String(error),
       };
     }
@@ -1405,7 +1408,7 @@ export class SecurityChecker {
 
       // Ajouter cap_drop au service jellyfin (après la section security_opt)
       const jellyfinServicePattern =
-        /(    security_opt:\s*\n(?:      - [^\n]+\n)+)/;
+        /( {4}security_opt:\s*\n(?: {6}- [^\n]+\n)+)/;
       const capabilitiesConfig =
         '\n    # Restriction des capabilities\n    cap_drop:\n      - ALL\n    cap_add:\n      - CHOWN\n      - SETUID\n      - SETGID\n';
 
@@ -1439,7 +1442,7 @@ export class SecurityChecker {
       return {
         checkName: 'Container Capabilities',
         success: false,
-        message: 'Échec de l\'ajout des restrictions de capabilities',
+        message: "Échec de l'ajout des restrictions de capabilities",
         error: error instanceof Error ? error.message : String(error),
       };
     }

@@ -1,15 +1,15 @@
 import chalk from 'chalk';
 
 export class Logger {
-  static info(message: string, ...args: any[]) {
+  static info(message: string, ...args: unknown[]) {
     console.log(chalk.blue('ℹ'), message, ...args);
   }
 
-  static success(message: string, ...args: any[]) {
+  static success(message: string, ...args: unknown[]) {
     console.log(chalk.green('✅'), message, ...args);
   }
 
-  static warning(message: string, ...args: any[]) {
+  static warning(message: string, ...args: unknown[]) {
     console.log(chalk.yellow('⚠️'), message, ...args);
   }
 
@@ -23,7 +23,7 @@ export class Logger {
     }
   }
 
-  static debug(message: string, ...args: any[]) {
+  static debug(message: string, ...args: unknown[]) {
     if (process.env.NODE_ENV === 'development') {
       console.log(chalk.gray('🐛'), message, ...args);
     }

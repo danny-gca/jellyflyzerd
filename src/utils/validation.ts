@@ -13,7 +13,7 @@ export const domainSchema = z
 
 export const pathSchema = z.string().min(1);
 
-export function validateConfig(config: any) {
+export function validateConfig(config: unknown) {
   const configSchema = z.object({
     jellyfin: z.object({
       port: portSchema,

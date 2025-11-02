@@ -42,7 +42,7 @@ export class DockerService {
       Logger.info(`Démarrage du conteneur ${this.config.containerName}...`);
 
       // Vérifier si le conteneur existe
-      let container;
+      let container: Docker.Container;
       try {
         container = this.docker.getContainer(this.config.containerName);
         await container.inspect();
@@ -192,7 +192,7 @@ export class DockerService {
   }
 
   private formatPortBindings() {
-    const bindings: any = {};
+    const bindings: Record<string, Array<{ HostPort: string }>> = {};
     for (const [containerPort, hostPort] of Object.entries(this.config.ports)) {
       bindings[`${containerPort}/tcp`] = [{ HostPort: hostPort }];
     }

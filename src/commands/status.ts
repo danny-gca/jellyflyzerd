@@ -45,8 +45,11 @@ export const statusCommand = new Command('status')
       // Statut des services
       console.log('🎬 Services Docker:');
       if (servicesStatus.extra?.services) {
-        const { jellyfin, nginx, watchtower, fail2ban } =
-          servicesStatus.extra.services;
+        const services = servicesStatus.extra.services as Record<
+          string,
+          boolean
+        >;
+        const { jellyfin, nginx, watchtower, fail2ban } = services;
         console.log(
           `  🎬 Jellyfin: ${jellyfin ? '🟢 EN MARCHE' : '🔴 ARRÊTÉ'}`,
         );

@@ -68,9 +68,8 @@ export const logsCommand = new Command('logs')
 
       logLines.forEach((line) => {
         // Nettoyer les caractères de contrôle Docker
-        const cleanLine = line
-          .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-          .trim();
+        const controlCharsRegex = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
+        const cleanLine = line.replace(controlCharsRegex, '').trim();
 
         if (cleanLine) {
           // Coloration basique selon le niveau

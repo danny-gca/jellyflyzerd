@@ -1,8 +1,8 @@
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { Command } from 'commander';
-import { Logger } from '../utils/logger.js';
 import { config } from 'dotenv';
+import { Logger } from '../utils/logger.js';
 
 // Charger les variables d'environnement
 config();
@@ -12,14 +12,17 @@ export const sslCommand = new Command('ssl')
   .addCommand(
     new Command('renew')
       .description('Renouveler et synchroniser les certificats SSL')
-      .option('--force', 'Forcer le renouvellement même si le certificat est valide')
+      .option(
+        '--force',
+        'Forcer le renouvellement même si le certificat est valide',
+      )
       .action(async (options) => {
         await renewSSL(options.force);
       }),
   )
   .addCommand(
     new Command('status')
-      .description('Afficher l\'état du certificat SSL')
+      .description("Afficher l'état du certificat SSL")
       .action(async () => {
         await checkSSLStatus();
       }),
@@ -68,9 +71,7 @@ async function checkSSLStatus(): Promise<void> {
       }
     }
   } catch (error) {
-    Logger.error(
-      `Erreur lors de la vérification du certificat: ${error}`,
-    );
+    Logger.error(`Erreur lors de la vérification du certificat: ${error}`);
   }
 }
 
@@ -99,7 +100,7 @@ async function renewSSL(force: boolean = false): Promise<void> {
         encoding: 'utf-8',
         stdio: 'inherit',
       });
-    } catch (error) {
+    } catch (_error) {
       Logger.info('⚠️  Nginx Docker non démarré ou déjà arrêté');
     }
 
@@ -116,7 +117,10 @@ async function renewSSL(force: boolean = false): Promise<void> {
         stdio: 'pipe',
       });
 
-      if (output.includes('Successfully received certificate') || output.includes('Certificate not yet due for renewal')) {
+      if (
+        output.includes('Successfully received certificate') ||
+        output.includes('Certificate not yet due for renewal')
+      ) {
         Logger.success('✅ Certificat renouvelé avec succès (ou déjà valide)');
       } else {
         Logger.info(output);
@@ -145,14 +149,12 @@ async function renewSSL(force: boolean = false): Promise<void> {
 
     try {
       // Copier les certificats
-      execSync(
-        `sudo cp ${letsencryptDir}/fullchain.pem ${sslDir}/cert.pem`,
-        { encoding: 'utf-8' },
-      );
-      execSync(
-        `sudo cp ${letsencryptDir}/privkey.pem ${sslDir}/key.pem`,
-        { encoding: 'utf-8' },
-      );
+      execSync(`sudo cp ${letsencryptDir}/fullchain.pem ${sslDir}/cert.pem`, {
+        encoding: 'utf-8',
+      });
+      execSync(`sudo cp ${letsencryptDir}/privkey.pem ${sslDir}/key.pem`, {
+        encoding: 'utf-8',
+      });
 
       // Corriger les permissions
       const systemUser = process.env.SYSTEM_USER || process.env.USER || 'root';
