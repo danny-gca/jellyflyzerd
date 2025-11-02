@@ -1,6 +1,10 @@
 import { execSync } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
+import { config } from 'dotenv';
 import { Logger } from '../utils/logger.js';
+
+// Charger les variables d'environnement depuis .env
+config();
 
 export interface SecurityCheck {
   name: string;
@@ -23,8 +27,22 @@ export interface SecurityReport {
   };
 }
 
+export interface AutoFixResult {
+  checkName: string;
+  success: boolean;
+  message: string;
+  error?: string;
+}
+
+export interface FixableCheck {
+  check: SecurityCheck;
+  fixFunction: () => Promise<AutoFixResult>;
+  requiresConfirmation: boolean;
+}
+
 export class SecurityChecker {
   private checks: SecurityCheck[] = [];
+  private fixableChecks: FixableCheck[] = [];
 
   async runAllChecks(): Promise<SecurityReport> {
     Logger.info("🔒 Démarrage de l'audit de sécurité...");
@@ -350,7 +368,7 @@ export class SecurityChecker {
           'File Permissions',
           'warn',
           "Fichiers système avec permissions d'écriture globale trouvés",
-          'Vérifiez les permissions: ' + worldWritable.split('\n')[0],
+          `Vérifiez les permissions: ${worldWritable.split('\n')[0]}`,
           false,
         );
       } else {
@@ -369,7 +387,7 @@ export class SecurityChecker {
           'find /usr /bin /sbin -perm -4000 2>/dev/null | wc -l',
           { encoding: 'utf-8' },
         ).trim();
-        const suidCount = parseInt(suidFiles);
+        const suidCount = parseInt(suidFiles, 10);
         if (suidCount < 20) {
           this.addCheck(
             'SUID Files',
@@ -521,13 +539,14 @@ export class SecurityChecker {
             false,
           );
         } else {
-          this.addCheck(
+          const check = this.addCheck(
             'Container User',
             'warn',
             'Conteneur Jellyfin pourrait tourner en root',
             'Configurez un utilisateur non-root',
             false,
           );
+          this.addFixableCheck(check, () => this.fixContainerUser(), true);
         }
 
         // Vérifier les capabilities
@@ -540,21 +559,29 @@ export class SecurityChecker {
             false,
           );
         } else {
-          this.addCheck(
+          const check = this.addCheck(
             'Container Capabilities',
             'warn',
             'Aucune restriction de capabilities détectée',
             "Considérez l'ajout de --cap-drop ALL",
             false,
           );
+          this.addFixableCheck(
+            check,
+            () => this.fixContainerCapabilities(),
+            true,
+          );
         }
 
         // Vérifier les volumes
         const mounts = containerConfig[0]?.Mounts || [];
-        const bindMounts = mounts.filter((mount: any) => mount.Type === 'bind');
+        const bindMounts = mounts.filter(
+          (mount: { Type: string; Mode: string; Source: string }) =>
+            mount.Type === 'bind',
+        );
         if (
           bindMounts.some(
-            (mount: any) =>
+            (mount: { Type: string; Mode: string; Source: string }) =>
               mount.Mode.includes('rw') &&
               (mount.Source.includes('/') || mount.Source.includes('/etc')),
           )
@@ -726,12 +753,12 @@ export class SecurityChecker {
 
   private async checkSSLCertificates(): Promise<void> {
     try {
-      // Vérifier les certificats SSL
-      const domain = process.env.EXTERNAL_DOMAIN || 'your-domain.com';
-      const sslDir = `/etc/letsencrypt/live/${domain}`;
+      // Vérifier les certificats SSL (dans le répertoire Docker du projet)
+      const projectDir = process.env.PROJECT_DIR || process.cwd();
+      const sslDir = `${projectDir}/docker/nginx/ssl`;
       if (existsSync(sslDir)) {
-        const certFile = `${sslDir}/fullchain.pem`;
-        const keyFile = `${sslDir}/privkey.pem`;
+        const certFile = `${sslDir}/cert.pem`;
+        const keyFile = `${sslDir}/key.pem`;
 
         if (existsSync(certFile) && existsSync(keyFile)) {
           // Vérifier la validité du certificat
@@ -809,10 +836,10 @@ export class SecurityChecker {
   private async checkJellyfinSecurity(): Promise<void> {
     try {
       // Vérifier la configuration Jellyfin
-      const configPath = process.env.CONFIG_PATH || '/your-config-path';
-      if (existsSync(configPath)) {
+      const configPath = process.env.CONFIG_PATH;
+      if (configPath && existsSync(configPath)) {
         // Vérifier les logs d'accès
-        const logsPath = `${configPath}/logs`;
+        const logsPath = process.env.LOGS_PATH || `${configPath}/logs`;
         if (existsSync(logsPath)) {
           this.addCheck(
             'Jellyfin Logs',
@@ -843,12 +870,17 @@ export class SecurityChecker {
             false,
           );
         } else {
-          this.addCheck(
+          const check = this.addCheck(
             'Jellyfin Config Permissions',
             'warn',
             `Permissions config: ${configMode}`,
             'Vérifiez les permissions du répertoire de configuration',
             false,
+          );
+          this.addFixableCheck(
+            check,
+            () => this.fixConfigPermissions(configPath),
+            true,
           );
         }
       } else {
@@ -1009,20 +1041,30 @@ export class SecurityChecker {
       if (updateCount === 0) {
         this.addCheck('System Updates', 'pass', 'Système à jour', '', false);
       } else if (updateCount < 10) {
-        this.addCheck(
+        const check = this.addCheck(
           'System Updates',
           'warn',
           `${updateCount} mise(s) à jour disponible(s)`,
           'Exécutez: sudo apt update && sudo apt upgrade',
           false,
         );
+        this.addFixableCheck(
+          check,
+          () => this.fixSystemUpdates(updateCount),
+          true,
+        );
       } else {
-        this.addCheck(
+        const check = this.addCheck(
           'System Updates',
           'warn',
           `${updateCount} mises à jour disponibles`,
           'Effectuez les mises à jour de sécurité',
           false,
+        );
+        this.addFixableCheck(
+          check,
+          () => this.fixSystemUpdates(updateCount),
+          true,
         );
       }
     } catch (error) {
@@ -1099,13 +1141,27 @@ export class SecurityChecker {
     message: string,
     recommendation: string,
     critical: boolean,
-  ): void {
-    this.checks.push({
+  ): SecurityCheck {
+    const check: SecurityCheck = {
       name,
       status,
       message,
       recommendation: recommendation || undefined,
       critical,
+    };
+    this.checks.push(check);
+    return check;
+  }
+
+  private addFixableCheck(
+    check: SecurityCheck,
+    fixFunction: () => Promise<AutoFixResult>,
+    requiresConfirmation: boolean,
+  ): void {
+    this.fixableChecks.push({
+      check,
+      fixFunction,
+      requiresConfirmation,
     });
   }
 
@@ -1207,5 +1263,190 @@ export class SecurityChecker {
         }
       }
     }
+  }
+
+  // === MÉTHODES DE CORRECTION AUTOMATIQUE ===
+
+  private async fixSystemUpdates(updateCount: number): Promise<AutoFixResult> {
+    try {
+      Logger.info(`🔄 Mise à jour de ${updateCount} paquet(s)...`);
+
+      // Mettre à jour la liste des paquets
+      Logger.info('📦 Mise à jour de la liste des paquets...');
+      execSync('sudo apt update -y', { encoding: 'utf-8', stdio: 'inherit' });
+
+      // Effectuer les mises à jour
+      Logger.info('⬆️  Installation des mises à jour...');
+      execSync('sudo apt upgrade -y', { encoding: 'utf-8', stdio: 'inherit' });
+
+      return {
+        checkName: 'System Updates',
+        success: true,
+        message: `${updateCount} mise(s) à jour installée(s) avec succès`,
+      };
+    } catch (error) {
+      return {
+        checkName: 'System Updates',
+        success: false,
+        message: 'Échec de la mise à jour du système',
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  private async fixConfigPermissions(
+    configPath: string,
+  ): Promise<AutoFixResult> {
+    try {
+      Logger.info('🔒 Correction des permissions de configuration Jellyfin...');
+
+      // Changer les permissions à 755
+      execSync(`chmod 755 "${configPath}"`, { encoding: 'utf-8' });
+
+      return {
+        checkName: 'Jellyfin Config Permissions',
+        success: true,
+        message: 'Permissions corrigées à 755',
+      };
+    } catch (error) {
+      return {
+        checkName: 'Jellyfin Config Permissions',
+        success: false,
+        message: 'Échec de la correction des permissions',
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  private async fixContainerUser(): Promise<AutoFixResult> {
+    try {
+      Logger.info('👤 Configuration de l\'utilisateur du conteneur...');
+
+      const projectDir = process.env.PROJECT_DIR || process.cwd();
+      const envPath = `${projectDir}/.env`;
+      const envExamplePath = `${projectDir}/.env.example`;
+
+      // Récupérer l'UID et GID de l'utilisateur actuel
+      const uid = execSync('id -u', { encoding: 'utf-8' }).trim();
+      const gid = execSync('id -g', { encoding: 'utf-8' }).trim();
+
+      // Vérifier si PUID/PGID existent déjà dans .env
+      const { readFileSync, writeFileSync } = await import('node:fs');
+      let envContent = readFileSync(envPath, 'utf-8');
+      let envExampleContent = readFileSync(envExamplePath, 'utf-8');
+
+      const puidExists = envContent.includes('PUID=');
+      const pgidExists = envContent.includes('PGID=');
+
+      if (!puidExists || !pgidExists) {
+        // Ajouter PUID/PGID à .env
+        const dockerSection = '\n# === DOCKER USER ===\n';
+        const puidLine = `PUID=${uid}\n`;
+        const pgidLine = `PGID=${gid}\n`;
+
+        if (!puidExists && !pgidExists) {
+          envContent += dockerSection + puidLine + pgidLine;
+          envExampleContent += dockerSection + 'PUID=1000\n' + 'PGID=1000\n';
+        } else if (!puidExists) {
+          envContent += puidLine;
+          envExampleContent += 'PUID=1000\n';
+        } else {
+          envContent += pgidLine;
+          envExampleContent += 'PGID=1000\n';
+        }
+
+        writeFileSync(envPath, envContent);
+        writeFileSync(envExamplePath, envExampleContent);
+
+        Logger.info(
+          `✅ PUID=${uid} et PGID=${gid} ajoutés au .env. Redémarrez les conteneurs pour appliquer les changements.`,
+        );
+
+        return {
+          checkName: 'Container User',
+          success: true,
+          message: `PUID=${uid} et PGID=${gid} configurés. Redémarrez avec: cd docker && docker-compose up -d`,
+        };
+      } else {
+        return {
+          checkName: 'Container User',
+          success: true,
+          message: 'PUID/PGID déjà configurés',
+        };
+      }
+    } catch (error) {
+      return {
+        checkName: 'Container User',
+        success: false,
+        message: 'Échec de la configuration de l\'utilisateur du conteneur',
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  private async fixContainerCapabilities(): Promise<AutoFixResult> {
+    try {
+      Logger.info('🛡️  Ajout des restrictions de capabilities au conteneur...');
+
+      const projectDir = process.env.PROJECT_DIR || process.cwd();
+      const composeFilePath = `${projectDir}/docker/docker-compose.yml`;
+
+      const { readFileSync, writeFileSync } = await import('node:fs');
+      let composeContent = readFileSync(composeFilePath, 'utf-8');
+
+      // Vérifier si cap_drop existe déjà
+      if (composeContent.includes('cap_drop:')) {
+        return {
+          checkName: 'Container Capabilities',
+          success: true,
+          message: 'Restrictions de capabilities déjà configurées',
+        };
+      }
+
+      // Ajouter cap_drop au service jellyfin (après la section security_opt)
+      const jellyfinServicePattern =
+        /(    security_opt:\s*\n(?:      - [^\n]+\n)+)/;
+      const capabilitiesConfig =
+        '\n    # Restriction des capabilities\n    cap_drop:\n      - ALL\n    cap_add:\n      - CHOWN\n      - SETUID\n      - SETGID\n';
+
+      if (jellyfinServicePattern.test(composeContent)) {
+        composeContent = composeContent.replace(
+          jellyfinServicePattern,
+          `$1${capabilitiesConfig}`,
+        );
+
+        writeFileSync(composeFilePath, composeContent);
+
+        Logger.info(
+          '✅ Restrictions de capabilities ajoutées. Redémarrez les conteneurs pour appliquer les changements.',
+        );
+
+        return {
+          checkName: 'Container Capabilities',
+          success: true,
+          message:
+            'Restrictions ajoutées. Redémarrez avec: cd docker && docker-compose up -d',
+        };
+      } else {
+        return {
+          checkName: 'Container Capabilities',
+          success: false,
+          message:
+            'Impossible de trouver la section jellyfin dans docker-compose.yml',
+        };
+      }
+    } catch (error) {
+      return {
+        checkName: 'Container Capabilities',
+        success: false,
+        message: 'Échec de l\'ajout des restrictions de capabilities',
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  // Obtenir les vérifications corrigibles
+  getFixableChecks(): FixableCheck[] {
+    return this.fixableChecks;
   }
 }

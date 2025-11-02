@@ -1,5 +1,7 @@
-import { Command } from 'commander';
 import { writeFileSync } from 'node:fs';
+import { Command } from 'commander';
+import inquirer from 'inquirer';
+import type { AutoFixResult } from '../security/SecurityChecker.js';
 import { SecurityChecker } from '../security/SecurityChecker.js';
 import { Logger } from '../utils/logger.js';
 
@@ -24,11 +26,9 @@ export const securityCommand = new Command('security')
         Logger.success(`Rapport sauvegardé dans: ${options.save}`);
       }
 
+      // Mode correction automatique
       if (options.fix) {
-        Logger.info('🔧 Mode correction automatique non encore implémenté');
-        Logger.info(
-          'Les corrections manuelles sont recommandées pour la sécurité',
-        );
+        await handleAutoFix(checker);
       }
 
       // Code de sortie basé sur les résultats
@@ -51,3 +51,102 @@ export const securityCommand = new Command('security')
       process.exit(1);
     }
   });
+
+// Fonction de gestion de la correction automatique
+async function handleAutoFix(checker: SecurityChecker): Promise<void> {
+  const fixableChecks = checker.getFixableChecks();
+
+  if (fixableChecks.length === 0) {
+    Logger.info('ℹ️  Aucune correction automatique disponible pour le moment.');
+    return;
+  }
+
+  console.log('\n🔧 CORRECTIONS AUTOMATIQUES DISPONIBLES\n');
+  console.log(
+    `${fixableChecks.length} problème(s) peuvent être corrigés automatiquement:\n`,
+  );
+
+  for (const fixable of fixableChecks) {
+    console.log(`  • ${fixable.check.name}: ${fixable.check.message}`);
+    if (fixable.check.recommendation) {
+      console.log(`    💡 ${fixable.check.recommendation}`);
+    }
+  }
+
+  console.log('');
+
+  // Demander confirmation globale
+  const { confirmFix } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'confirmFix',
+      message:
+        'Voulez-vous procéder aux corrections automatiques disponibles ?',
+      default: false,
+    },
+  ]);
+
+  if (!confirmFix) {
+    Logger.info('Correction automatique annulée.');
+    return;
+  }
+
+  // Exécuter les corrections
+  const results: AutoFixResult[] = [];
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const fixable of fixableChecks) {
+    console.log(`\n🔄 Correction de: ${fixable.check.name}...`);
+
+    // Confirmation individuelle si requise
+    if (fixable.requiresConfirmation) {
+      const { confirm } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'confirm',
+          message: `Confirmer la correction de "${fixable.check.name}" ?`,
+          default: true,
+        },
+      ]);
+
+      if (!confirm) {
+        Logger.info(`⏭️  Ignoré: ${fixable.check.name}`);
+        continue;
+      }
+    }
+
+    // Exécuter la correction
+    try {
+      const result = await fixable.fixFunction();
+      results.push(result);
+
+      if (result.success) {
+        Logger.success(`✅ ${result.message}`);
+        successCount++;
+      } else {
+        Logger.error(`❌ ${result.message}`);
+        if (result.error) {
+          Logger.error(`   Erreur: ${result.error}`);
+        }
+        failCount++;
+      }
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : 'Erreur inconnue';
+      Logger.error(`❌ Échec: ${errorMsg}`);
+      failCount++;
+    }
+  }
+
+  // Résumé des corrections
+  console.log('\n📊 RÉSUMÉ DES CORRECTIONS\n');
+  console.log(`  ✅ Réussies: ${successCount}`);
+  console.log(`  ❌ Échouées: ${failCount}`);
+  console.log(`  📝 Total: ${successCount + failCount}`);
+
+  if (successCount > 0) {
+    console.log('\n💡 Relancez un audit pour vérifier les améliorations:');
+    console.log('   jellyflyzerd security');
+  }
+}

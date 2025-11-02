@@ -20,6 +20,9 @@ tmp/
 jellyfin-cache/
 jellyfin-data/
 
+# Cache de vérification Watchtower
+.watchtower-check-cache.json
+
 # Données v2.0.0 (obsolète - maintenant sur disque externe)
 backup-v1-*/
 
@@ -51,6 +54,10 @@ private/
 
 # Configuration nginx générée (contient des données sensibles)
 docker/nginx/nginx.conf
+
+# Base de données fail2ban (fichiers générés à l'exécution)
+docker/fail2ban/db/
+*.sqlite3
 
 # Dossiers de build/dist Node.js
 build/

@@ -8,6 +8,7 @@ import { Command } from 'commander';
 import { logsCommand } from './commands/logs.js';
 import { monitorCommand } from './commands/monitor.js';
 import { securityCommand } from './commands/security.js';
+import { sslCommand } from './commands/ssl.js';
 import { startCommand } from './commands/start.js';
 // Import des commandes
 import { statusCommand } from './commands/status.js';
@@ -40,6 +41,7 @@ program.addCommand(stopCommand);
 program.addCommand(logsCommand);
 program.addCommand(monitorCommand);
 program.addCommand(securityCommand);
+program.addCommand(sslCommand);
 
 // Commande par défaut (afficher le statut si aucune commande)
 program.action(() => {

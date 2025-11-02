@@ -45,13 +45,20 @@ export const statusCommand = new Command('status')
       // Statut des services
       console.log('🎬 Services Docker:');
       if (servicesStatus.extra?.services) {
-        const { jellyfin, nginx } = servicesStatus.extra.services;
+        const { jellyfin, nginx, watchtower, fail2ban } =
+          servicesStatus.extra.services;
         console.log(
           `  🎬 Jellyfin: ${jellyfin ? '🟢 EN MARCHE' : '🔴 ARRÊTÉ'}`,
         );
         console.log(`  🟦 Nginx: ${nginx ? '🟢 EN MARCHE' : '🔴 ARRÊTÉ'}`);
         console.log(
-          `  📈 Services actifs: ${servicesStatus.extra.runningCount}/2`,
+          `  🔄 Watchtower: ${watchtower ? '🟢 EN MARCHE' : '🔴 ARRÊTÉ'}`,
+        );
+        console.log(
+          `  🛡️  Fail2ban: ${fail2ban ? '🟢 EN MARCHE' : '🔴 ARRÊTÉ'}`,
+        );
+        console.log(
+          `  📈 Services actifs: ${servicesStatus.extra.runningCount}/4`,
         );
       } else {
         if (servicesStatus.isRunning) {
