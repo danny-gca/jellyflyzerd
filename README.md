@@ -1,4 +1,4 @@
-# 🎬 Jellyflyzerd v2.0.0
+# 🎬 Jellyflyzerd v2.1.0
 
 CLI moderne pour la gestion de serveurs Jellyfin avec Docker.
 
