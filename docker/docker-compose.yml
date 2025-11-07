@@ -73,6 +73,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx       # ✅ Nouveau volume pour les logs
     depends_on:
       - jellyfin
     restart: unless-stopped
